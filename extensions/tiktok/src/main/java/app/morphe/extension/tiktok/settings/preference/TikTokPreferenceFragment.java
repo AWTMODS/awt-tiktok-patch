@@ -1421,8 +1421,6 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
         // a reader finds them, the home heading or the page; it said "Settings" for all of
         // them, which is no page.
         String homeTitle = "Adrmodtt";
-        String adrmodtt = L10n.t(context, "Adrmodtt");
-        String about = L10n.t(context, Hub.ABOUT.title);
         // Without an explicit entry, the Lab's title and summary returned zero results on a
         // patched phone even though the row was visible.
         if (featureGateLabInstalled) {
@@ -1436,52 +1434,7 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
                     "override gates"
             ));
         }
-        // Pause Adrmodtt is what a reader asking whether a problem is Adrmodtt's searches for.
-        results.add(new SearchResult(
-                null,
-                BaseSettings.PAUSED.key,
-                L10n.t(context, "Pause Adrmodtt"),
-                L10n.t(context, PAUSE_SUMMARY),
-                adrmodtt
-        ));
-        // Its summary carries the bundle version, which is what a reporter searches for.
-        results.add(new SearchResult(
-                null,
-                MorpheTikTokAboutPreference.KEY,
-                "Adrmodtt",
-                MorpheTikTokAboutPreference.currentSummary(context).toString(),
-                about
-        ));
-        // Searching "build" or "patches" found nothing, and the empty state then blamed patches
-        // left unticked in Morphe Manager, while the row that lists them sat on About Adrmodtt.
-        results.add(new SearchResult(
-                null,
-                BuildDetailsPreference.KEY,
-                L10n.t(context, "Build details"),
-                L10n.t(context, BuildDetailsPreference.SUMMARY),
-                about,
-                "version"
-        ));
-        // What's new is on About Adrmodtt only until its notes are read, and so is its result.
-        String releaseVersion = releaseVersion();
-        if (ReleaseNotes.pending(context, releaseVersion)) {
-            results.add(new SearchResult(
-                    null,
-                    ReleaseNotes.KEY,
-                    L10n.t(context, "What's new"),
-                    L10n.f(context, "Changes in Adrmodtt %1$s", ReleaseNotes.rowVersion(context, releaseVersion)),
-                    about,
-                    "release notes changelog"
-            ));
-        }
-        // Somebody looking for "licence" or "notice" is looking for exactly one thing.
-        results.add(new SearchResult(
-                null,
-                LicensesPreference.KEY,
-                LicensesPreference.title(context),
-                LicensesPreference.summary(context),
-                about
-        ));
+
         return results;
     }
 
@@ -1731,8 +1684,7 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
     /** Each category reveals its controls directly below its compact header. */
     private void createMasterMenu(Context context, PreferenceScreen screen) {
         // The bar isn't a row: onCreateView pins it above the list, so it stays as the rows scroll.
-        masterHeader = SettingsHeaderPreference.master(context, this::navigateBack,
-                () -> showRow(SettingsStatusPreference.KEY));
+        masterHeader = SettingsHeaderPreference.master(context, this::navigateBack, null);
         pageHeader = new SettingsHeader(context);
         pageHeader.setOrder(-1000);
         screen.addPreference(pageHeader);
@@ -1756,18 +1708,6 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
             if (section.isAvailable()) addMenu(screen, section);
         }
         if (FeatureGateLabRuntime.isInstalled()) addFeatureGateLab(screen);
-
-        screen.addPreference(SectionHeadingPreference.compact(context, "Adrmodtt"));
-        // Detailed state and recovery, with Turn Adrmodtt back on while paused.
-        SettingsStatusPreference status = new SettingsStatusPreference(context,
-                Section.DIAGNOSTICS.isAvailable() ? () -> openSection(Section.DIAGNOSTICS) : null);
-        status.setTurnBackOnAction(this::turnAdrmodttBackOn);
-        screen.addPreference(status);
-        screen.addPreference(pauseRow(context));
-        if (Section.DIAGNOSTICS.isAvailable()) addMenu(screen, Section.DIAGNOSTICS);
-        addAbout(screen);
-        addReportProblem(screen);
-        addSupport(screen);
         // Search results occupy the space between the field and these category rows.
         for (int index = 0; index < screen.getPreferenceCount(); index++) {
             Preference row = screen.getPreference(index);
@@ -2292,7 +2232,9 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
     private void openHub(Hub hub, String targetKey) {
         closeSearch();
         expandAbout();
-        revealInline(targetKey == null ? aboutMenu.getKey() : targetKey, null);
+        if (aboutMenu != null) {
+            revealInline(targetKey == null ? aboutMenu.getKey() : targetKey, null);
+        }
     }
 
     private void openSection(Section section, String targetKey, String targetMember) {
