@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -201,7 +201,7 @@ public class CaptchaGateTest {
      * a check has reached it.
      *
      * <p>A report of a comment that went nowhere carried no CAPTCHA line at all, so nobody
-     * could say whether Hushfeed had seen the publish request, whether a puzzle had been
+     * could say whether Adrmodtt had seen the publish request, whether a puzzle had been
      * raised, or whether the gate was even in that build. A family that is simply absent says
      * all three.
      */
@@ -517,7 +517,7 @@ public class CaptchaGateTest {
 
     /**
      * #87: with the switch off, its default, a LIVE room's slide puzzle showed and nothing said
-     * Hushfeed could skip it. The first browsing puzzle of a session names the switch and still
+     * Adrmodtt could skip it. The first browsing puzzle of a session names the switch and still
      * shows; one the switch would show anyway, or any while paused, names nothing.
      */
     @Test
@@ -534,14 +534,14 @@ public class CaptchaGateTest {
         PausedProcess.set(true);
         assertFalse(CaptchaGate.shouldHideTuringDialog(null, new VerifyRequest("slide")));
         Shadows.shadowOf(Looper.getMainLooper()).idle();
-        assertEquals("paused, Hushfeed stays quiet", 0, ShadowToast.shownToastCount());
+        assertEquals("paused, Adrmodtt stays quiet", 0, ShadowToast.shownToastCount());
         PausedProcess.set(false);
 
         assertFalse("the switch is off, so the puzzle shows",
                 CaptchaGate.shouldHideTuringDialog(null, new VerifyRequest("slide")));
         Shadows.shadowOf(Looper.getMainLooper()).idle();
         assertEquals(1, ShadowToast.shownToastCount());
-        assertEquals("Hide CAPTCHA popups in Hushfeed skips these", ShadowToast.getTextOfLatestToast());
+        assertEquals("Hide CAPTCHA popups in Adrmodtt skips these", ShadowToast.getTextOfLatestToast());
         assertNull("nothing was hidden", CaptchaGate.recentlySuppressedCheckId());
 
         assertFalse(CaptchaGate.shouldHideCaptchaPopup(null, "{\"subtype\":\"slide\"}"));

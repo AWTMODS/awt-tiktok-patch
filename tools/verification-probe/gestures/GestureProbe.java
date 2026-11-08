@@ -1,4 +1,4 @@
-package app.hushfeed.verification.gestures;
+package app.adrmodtt.verification.gestures;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Instrumentation;

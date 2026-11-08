@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.storage;
 
@@ -58,7 +58,7 @@ public final class StorageReport implements LogBufferManager.ReportSection {
                 if (measuring) return;
                 measuring = true;
             }
-            boolean started = Utils.runOnOwnThread("hushfeed-storage", () -> {
+            boolean started = Utils.runOnOwnThread("adrmodtt-storage", () -> {
                 List<String> lines;
                 try {
                     lines = measure(roots(app), System.nanoTime() / 1_000_000L + TIME_BUDGET_MS, FILE_BUDGET);

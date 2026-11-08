@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.navigation;
 
@@ -18,7 +18,7 @@ import java.util.List;
 
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.diagnostics.HookStatus;
-import app.morphe.extension.shared.settings.HushfeedPause;
+import app.morphe.extension.shared.settings.AdrmodttPause;
 
 /**
  * Shows the For You page to TikTok again when TikTok left it unshown while it's on screen
@@ -127,7 +127,7 @@ public final class ForYouShowRepair {
     }
 
     static Outcome check(Object pager, boolean again) {
-        if (HushfeedPause.isPaused()) return Outcome.PAUSED;
+        if (AdrmodttPause.isPaused()) return Outcome.PAUSED;
         if (repairing) {
             Logger.printDebug(() -> "For You show: a page picked during the repair is left alone");
             return Outcome.BUSY;

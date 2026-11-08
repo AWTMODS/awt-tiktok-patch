@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.share;
 
@@ -9,7 +9,7 @@ import android.content.Context;
 import android.widget.ImageView;
 
 /**
- * The share sheet actions Hushfeed builds on TikTok's native Report carrier: Block this creator
+ * The share sheet actions Adrmodtt builds on TikTok's native Report carrier: Block this creator
  * (Share sheet tools), Save cover (Advanced downloads) and Make sticker (Create stickers). The
  * carrier's key, label, click and icon hooks land here once and each action answers only for the
  * carriers it built, so a carrier none of them owns keeps every original Report instruction.

@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.translation;
 
@@ -35,7 +35,7 @@ import org.robolectric.annotation.Config;
  * when either of two gates answers true, and takes See translation off videos when
  * {@code feed_translation_reverse} is 1. The switch starts off, answers each gate false and the
  * reverse value 0 while it is on, never takes translation away itself, and leaves TikTok's answer
- * alone while Hushfeed is paused or before the settings context exists.
+ * alone while Adrmodtt is paused or before the settings context exists.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 28)
@@ -69,7 +69,7 @@ public class LanguagePageTranslationsTest {
     }
 
     @Test
-    public void aPausedHushfeedLeavesTikTokAlone() {
+    public void aPausedAdrmodttLeavesTikTokAlone() {
         Settings.SHOW_TRANSLATION_SETTINGS.save(true);
         PausedProcess.set(true);
         assertTrue(LanguagePageTranslations.hidden(true));

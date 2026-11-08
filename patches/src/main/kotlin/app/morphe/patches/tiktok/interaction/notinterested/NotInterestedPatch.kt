@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -32,7 +32,7 @@ private object DislikeRequestFactoryFingerprint : Fingerprint(
 val notInterestedPatch = bytecodePatch(
     name = "Not interested button",
     description = "Adds a button on videos that tells TikTok you're not interested in one " +
-        "tap, so it can show you fewer like it. Starts off. Turn it on in Hushfeed settings > " +
+        "tap, so it can show you fewer like it. Starts off. Turn it on in Adrmodtt settings > " +
         "Feed screen.",
 ) {
     category("Feed")

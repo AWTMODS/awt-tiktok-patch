@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -89,7 +89,7 @@ val blockAuthorPatch = bytecodePatch(
     name = "Block author button",
     description = "Adds buttons on videos to block the creator, hide them only on your phone, " +
         "or block the sound, so you can get rid of what you don't want in one tap. Starts off. " +
-        "Turn it on in Hushfeed settings > Feed screen.",
+        "Turn it on in Adrmodtt settings > Feed screen.",
 ) {
     category("Interaction")
     dependsOn(settingsPatch, sharedExtensionPatch, sessionPlaybackBridgePatch)

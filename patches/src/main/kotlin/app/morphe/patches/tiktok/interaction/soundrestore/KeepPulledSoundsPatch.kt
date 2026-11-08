@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.interaction.soundrestore
 
@@ -113,7 +113,7 @@ val keepPulledSoundsPatch = bytecodePatch(
     name = "Keep pulled sounds",
     description = "Plays the sound on videos TikTok muted for copyright or because of where " +
         "you live. TikTok may still say the sound isn't available. Starts off. Turn it on in " +
-        "Hushfeed settings > Playback.",
+        "Adrmodtt settings > Playback.",
 ) {
     category("Playback")
     dependsOn(settingsPatch, sharedExtensionPatch)

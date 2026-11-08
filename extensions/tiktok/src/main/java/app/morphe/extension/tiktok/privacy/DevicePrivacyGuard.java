@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.privacy;
 
@@ -35,7 +35,7 @@ import java.util.Map;
  * class as soon as it loads rather than failing at the call. The VPN and advertising-id intercepts
  * keep to the same rule.
  *
- * <p>Each switch is read at the call and answers off while Hushfeed is paused. The clipboard,
+ * <p>Each switch is read at the call and answers off while Adrmodtt is paused. The clipboard,
  * VPN and advertising-id switches need no restart. Root collectors can retain an earlier answer,
  * so changing the root switch needs a restart. A new device identity isn't a switch and holds
  * through a pause too: the phone's own ids, handed over once, would tie it to the old identity.
@@ -126,7 +126,7 @@ public final class DevicePrivacyGuard {
 
     // --- Advertising id ---
 
-    /** Whether the advertising id switch is on, read at the call, and off while Hushfeed is paused. */
+    /** Whether the advertising id switch is on, read at the call, and off while Adrmodtt is paused. */
     private static boolean blocksAdvertisingId(String what) {
         boolean on = Utils.getContext() != null
                 ? Settings.BLOCK_ADVERTISING_ID.get() : EarlySwitch.isOn(ADVERTISING_ID_KEY);

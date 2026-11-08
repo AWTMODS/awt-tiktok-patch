@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.interaction.pip
 
@@ -119,7 +119,7 @@ private val pictureInPictureManifestPatch = resourcePatch {
 val pictureInPicturePatch = bytecodePatch(
     name = "Picture-in-picture",
     description = "Keeps the video playing in a small window when you leave TikTok, so you " +
-        "can keep watching while you use other apps. Starts off. Turn it on in Hushfeed settings " +
+        "can keep watching while you use other apps. Starts off. Turn it on in Adrmodtt settings " +
         "> Playback.",
 ) {
     category("Playback")

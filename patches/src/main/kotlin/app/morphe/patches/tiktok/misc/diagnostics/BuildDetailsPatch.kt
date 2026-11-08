@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.diagnostics
 
@@ -18,7 +18,7 @@ import java.util.Properties
 import java.util.jar.Attributes
 import java.util.jar.JarFile
 
-internal const val BUILD_DETAILS_ASSET = "assets/hushfeed-build-v1.txt"
+internal const val BUILD_DETAILS_ASSET = "assets/adrmodtt-build-v1.txt"
 
 /** A raw dependency also works when no bytecode or runtime extension is selected. */
 internal val buildDetailsPatch = rawResourcePatch {
@@ -153,10 +153,10 @@ internal object BuildDetails {
         facts["bundle_version"] = manifest.getValue("Version").validated(version)
         facts["patcher_bundle_compat"] = manifest.getValue("Patcher-Version").validated(version)
         facts["patcher_applying_engine"] = applyingVersion.validated(version)
-        facts["source_commit"] = manifest.getValue("Hushfeed-Source-Commit").validated(commit)
-        facts["source_start"] = manifest.getValue("Hushfeed-Source-Start").validated(hash)
-        facts["source_end"] = manifest.getValue("Hushfeed-Source-End").validated(hash)
-        val clean = manifest.getValue("Hushfeed-Source-Clean")
+        facts["source_commit"] = manifest.getValue("Adrmodtt-Source-Commit").validated(commit)
+        facts["source_start"] = manifest.getValue("Adrmodtt-Source-Start").validated(hash)
+        facts["source_end"] = manifest.getValue("Adrmodtt-Source-End").validated(hash)
+        val clean = manifest.getValue("Adrmodtt-Source-Clean")
         facts["source_clean"] = when {
             clean == "false" -> "false"
             clean == "true" && facts["source_commit"] != "unknown" && facts["source_start"] != "unknown" &&

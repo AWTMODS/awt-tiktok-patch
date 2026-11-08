@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.share;
 
@@ -338,7 +338,7 @@ public class ShortLinkExpanderTest {
     @Config(shadows = ClipboardWithItsOwnListeners.class)
     @Test public void aWaitFromANewerContextEndsToo() {
         ActivityController<Activity> tiktok = Robolectric.buildActivity(Activity.class).setup();
-        // Hushfeed's language set: each new MainActivity hands out a context of its own, with a
+        // Adrmodtt's language set: each new MainActivity hands out a context of its own, with a
         // clipboard manager of its own.
         Context relocalized = context.createConfigurationContext(context.getResources().getConfiguration());
         ClipboardManager itsClipboard = (ClipboardManager) relocalized.getSystemService(Context.CLIPBOARD_SERVICE);

@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.theme
 
@@ -146,7 +146,7 @@ internal fun composeArgb(color: String): Long = 0xff000000L or color.takeLast(6)
 
 /**
  * Each card color this builder writes goes through the extension's [AMOLED_THEME_EXTENSION]
- * composeCard first, which answers the AMOLED color while the switch in Hushfeed settings is on
+ * composeCard first, which answers the AMOLED color while the switch in Adrmodtt settings is on
  * and TikTok's own packed color while it's off (#372). The builder's conversion packs a color by
  * shifting it left 32 bits (AmoledComposeCardsTest holds it to that), which is how the extension
  * packs the AMOLED one.

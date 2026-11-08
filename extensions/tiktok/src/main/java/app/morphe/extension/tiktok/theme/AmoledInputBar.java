@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.theme;
 
@@ -25,7 +25,7 @@ public final class AmoledInputBar {
     public static void paint(View bar, int argb) {
         if (bar == null) return;
         try {
-            // Off in Hushfeed settings, the bar keeps TikTok's look like the rest (#372).
+            // Off in Adrmodtt settings, the bar keeps TikTok's look like the rest (#372).
             if (!AmoledTheme.on()) return;
             // The bar's own context carries the night mode TikTok applied, which the system's doesn't.
             if (SettingsUi.isDarkContext(bar.getContext())) bar.setBackgroundColor(argb);

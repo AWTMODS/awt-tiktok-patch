@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.feed;
 
@@ -68,7 +68,7 @@ final class GlassRefraction {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
     }
 
-    /** True while the switch is on, Hushfeed isn't paused and the phone can draw it. */
+    /** True while the switch is on, Adrmodtt isn't paused and the phone can draw it. */
     static boolean wanted() {
         return supported() && Settings.GLASS_REFRACTION.get();
     }

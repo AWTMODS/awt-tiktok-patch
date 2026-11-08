@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.download;
 
@@ -245,7 +245,7 @@ public class CaptionBurnerTest {
     }
 
     /** Paused, the switch answers off like every other one, so a save never reaches the encoder. */
-    @Test public void pausedHushfeedReadsTheSwitchAsOff() {
+    @Test public void pausedAdrmodttReadsTheSwitchAsOff() {
         Settings.DOWNLOAD_BURN_CAPTION.save(true);
         try {
             PausedProcess.set(true);

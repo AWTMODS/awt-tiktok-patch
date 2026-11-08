@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.theme;
 
@@ -16,12 +16,12 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
 import app.morphe.extension.tiktok.settings.Settings;
 
 /**
- * The AMOLED dark mode switch in Hushfeed settings (#372).
+ * The AMOLED dark mode switch in Adrmodtt settings (#372).
  *
  * <p>AMOLED dark theme paints TikTok's dark grays at patch time. Next to every surface it
  * repaints, the resource side keeps TikTok's own value under a theme attribute of its own
- * ({@code hushfeed_amoled_stock_<i>}), and it adds a style per surface
- * ({@code hushfeed_amoled_restore_<i>}) that points the surface back at that value, plus one
+ * ({@code adrmodtt_amoled_stock_<i>}), and it adds a style per surface
+ * ({@code adrmodtt_amoled_restore_<i>}) that points the surface back at that value, plus one
  * style that does all of them. While the switch is on, nothing here changes anything. While it's
  * off, each theme TikTok builds gets those styles applied right after TikTok builds it, so its
  * surfaces read TikTok's own grays again. The patch calls in from AppCompatActivity's setTheme,
@@ -30,13 +30,13 @@ import app.morphe.extension.tiktok.settings.Settings;
  * constructor. The Compose cards, the comment bar and the web pages ask {@link #on()}.
  *
  * <p>The answer is read once per process, so a screen never mixes the two looks: the switch
- * takes effect at the next start. Pausing Hushfeed reads as off.
+ * takes effect at the next start. Pausing Adrmodtt reads as off.
  */
 public final class AmoledTheme {
     static final String HOOK_FAMILY = "amoled dark mode";
-    static final String STOCK_ATTRIBUTE = "hushfeed_amoled_stock_";
-    static final String RESTORE_STYLE = "hushfeed_amoled_restore_";
-    static final String RESTORE_ALL_STYLE = "hushfeed_amoled_restore_all";
+    static final String STOCK_ATTRIBUTE = "adrmodtt_amoled_stock_";
+    static final String RESTORE_STYLE = "adrmodtt_amoled_restore_";
+    static final String RESTORE_ALL_STYLE = "adrmodtt_amoled_restore_all";
 
     /** More than any build has: 47.7.3 keeps about twenty. */
     private static final int MAX_SURFACES = 256;
@@ -64,7 +64,7 @@ public final class AmoledTheme {
 
     private AmoledTheme() {}
 
-    /** True unless the switch is off (or Hushfeed is paused) in a build with AMOLED dark theme. */
+    /** True unless the switch is off (or Adrmodtt is paused) in a build with AMOLED dark theme. */
     public static boolean on() {
         return !restoring();
     }

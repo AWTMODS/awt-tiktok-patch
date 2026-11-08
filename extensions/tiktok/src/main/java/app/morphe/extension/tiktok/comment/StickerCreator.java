@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.comment;
 
@@ -24,7 +24,7 @@ import android.view.ViewTreeObserver;
 import android.widget.TextView;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
-import app.morphe.extension.shared.settings.HushfeedPause;
+import app.morphe.extension.shared.settings.AdrmodttPause;
 import app.morphe.extension.tiktok.blockauthor.Reflect;
 import app.morphe.extension.tiktok.download.CoverSaver;
 import app.morphe.extension.tiktok.settings.L10n;
@@ -65,8 +65,8 @@ public final class StickerCreator {
     static final int PHOTO_STICKER = 9;
     /** The longest side a sticker keeps. */
     static final int MAX_SIDE = 512;
-    static final String PILL_TAG = "hushfeed_sticker_create";
-    static final String PICKER_TAG = "hushfeed_sticker_picker";
+    static final String PILL_TAG = "adrmodtt_sticker_create";
+    static final String PICKER_TAG = "adrmodtt_sticker_picker";
     static final String UPLOAD_CONFIG = "com.ss.android.ugc.aweme.subscription.pgc.jsbridge.upload.StickerImageAuthConfig";
     private static final String UPLOADER = "com.ss.bduploader.BDImageXUploader";
     private static final String UPLOADER_LISTENER = "com.ss.bduploader.BDImageXUploaderListener";
@@ -76,7 +76,7 @@ public final class StickerCreator {
     private static final long WAIT_SECONDS = 90;
     private static final AtomicBoolean BUSY = new AtomicBoolean();
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor(task -> {
-        Thread thread = new Thread(task, "hushfeed-sticker");
+        Thread thread = new Thread(task, "adrmodtt-sticker");
         thread.setDaemon(true);
         return thread;
     });
@@ -87,7 +87,7 @@ public final class StickerCreator {
     /** Called with the saved stickers page as the app builds it. */
     public static void onFavouritesPage(View page) {
         try {
-            if (HushfeedPause.isPaused() || !(page instanceof ViewGroup)) return;
+            if (AdrmodttPause.isPaused() || !(page instanceof ViewGroup)) return;
             ViewGroup root = (ViewGroup) page;
             if (root.findViewWithTag(PILL_TAG) != null) return;
             ViewGroup grid = findGrid(root);
@@ -260,7 +260,7 @@ public final class StickerCreator {
         if (context == null) return;
         Context app = context.getApplicationContext();
         start(() -> {
-            File cover = new File(app.getCacheDir(), "hushfeed-sticker-cover-" + System.nanoTime() + ".img");
+            File cover = new File(app.getCacheDir(), "adrmodtt-sticker-cover-" + System.nanoTime() + ".img");
             try {
                 if (!coverFetcher.fetch(app, aweme, cover)) return L10n.t("Couldn't make the sticker. Try again.");
                 return make(app, Uri.fromFile(cover));
@@ -349,7 +349,7 @@ public final class StickerCreator {
         if (size[0] <= 0) return null;
         Bitmap scaled = size[0] == bitmap.getWidth() && size[1] == bitmap.getHeight()
                 ? bitmap : Bitmap.createScaledBitmap(bitmap, size[0], size[1], true);
-        File file = new File(context.getCacheDir(), "hushfeed-sticker-" + System.currentTimeMillis() + ".png");
+        File file = new File(context.getCacheDir(), "adrmodtt-sticker-" + System.currentTimeMillis() + ".png");
         try (OutputStream out = new FileOutputStream(file)) {
             if (!scaled.compress(Bitmap.CompressFormat.PNG, 100, out)) throw new IOException("PNG encode failed");
         }
@@ -535,7 +535,7 @@ public final class StickerCreator {
             case "hashCode":
                 return System.identityHashCode(proxy);
             default:
-                return "HushfeedSticker";
+                return "AdrmodttSticker";
         }
     }
 

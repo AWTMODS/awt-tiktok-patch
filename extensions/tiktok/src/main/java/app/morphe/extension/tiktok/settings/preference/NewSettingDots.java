@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.settings.preference;
 
@@ -40,7 +40,7 @@ import app.morphe.extension.tiktok.settings.L10n;
  */
 public final class NewSettingDots {
     /** Kept through TikTok's launch-crash cleanup (LaunchCrashCleanup), or a crash would clear every dot. */
-    public static final String FILE = "hushfeed_new_dots";
+    public static final String FILE = "adrmodtt_new_dots";
     static final String SEEN = "seen";
     /** Marks a title that wears the dot, so a recycled row can lose it and a test can find it. */
     static final int TAG = 0x7f7f4008;

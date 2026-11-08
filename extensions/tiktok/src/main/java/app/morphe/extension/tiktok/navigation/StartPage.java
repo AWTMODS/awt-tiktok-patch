@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.navigation;
 
@@ -246,7 +246,7 @@ public final class StartPage {
             return topTabShown(NavigationTabOptions.FRIENDS) ? FRIENDS_FEED_TAG : null;
         }
         if (DISCOVER.equals(choice)) {
-            // Only a bar that has shown a Discover tab gets it (#338); Hushfeed keeps such a tab
+            // Only a bar that has shown a Discover tab gets it (#338); Adrmodtt keeps such a tab
             // under its raw tag, so the Bottom tabs page can still hide it.
             String key = BottomNavigationTabOptions.normalizeRuntimeTag(DISCOVER_TAG);
             boolean seen = BottomNavigationTabOptions.parseObservedKeys(

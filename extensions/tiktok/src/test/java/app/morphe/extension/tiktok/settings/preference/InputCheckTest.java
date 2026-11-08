@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -331,11 +331,11 @@ public class InputCheckTest {
             assertEquals("a refused folder was saved anyway", before,
                     Settings.DOWNLOAD_VIDEO_PATH.get());
 
-            box.setText("DCIM/Hushfeed");
+            box.setText("DCIM/Adrmodtt");
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
             Shadows.shadowOf(Looper.getMainLooper()).idle();
             assertFalse("the dialog stayed open on a folder it took", dialog.isShowing());
-            assertEquals("DCIM/Hushfeed", Settings.DOWNLOAD_VIDEO_PATH.get());
+            assertEquals("DCIM/Adrmodtt", Settings.DOWNLOAD_VIDEO_PATH.get());
         });
     }
 
@@ -473,7 +473,7 @@ public class InputCheckTest {
             String shown = previewIn(root);
             assertNotNull("no preview under the field", shown);
             assertTrue(shown, shown.contains("/creator_name_{vidoe_id}.mp4"));
-            assertTrue(shown, shown.contains("Not a part Hushfeed fills in, so it's kept as typed: {vidoe_id}"));
+            assertTrue(shown, shown.contains("Not a part Adrmodtt fills in, so it's kept as typed: {vidoe_id}"));
 
             field.getEditText().setText("{video_id}");
             shown = previewIn(root);

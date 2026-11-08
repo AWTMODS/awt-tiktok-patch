@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -26,14 +26,14 @@ val amoledThemePatch = resourcePatch(
     name = "AMOLED dark theme",
     description = "Makes TikTok's dark mode backgrounds pure black, or a dark color you pick " +
         "in this patch's options. Black lets OLED screens switch those pixels off. Light mode " +
-        "doesn't change. The AMOLED dark mode switch in Hushfeed settings > App starts on, and " +
+        "doesn't change. The AMOLED dark mode switch in Adrmodtt settings > App starts on, and " +
         "turning it off brings TikTok's own dark grays back.",
     default = false,
 ) {
     category("Interface")
     compatibleWith(*AppCompatibilities.tiktok())
     dependsOn(buildChoicePatch(BuildChoice.AMOLED))
-    // The switch in Hushfeed settings: the hooks that put TikTok's own grays back while it's off (#372).
+    // The switch in Adrmodtt settings: the hooks that put TikTok's own grays back while it's off (#372).
     dependsOn(amoledThemeSwitchPatch)
     val background by colorOption(
         key = "backgroundColor",
@@ -57,7 +57,7 @@ val amoledThemePatch = resourcePatch(
 
 /**
  * The resource half of AMOLED dark theme: the dark palette's grays and the dark surface literals
- * become [background], and TikTok's own values are kept beside them for the switch in Hushfeed
+ * become [background], and TikTok's own values are kept beside them for the switch in Adrmodtt
  * settings (#372). Answers the theme attributes whose stock value was kept, by index.
  */
 internal fun ResourcePatchContext.paintAmoledResources(background: String?): List<String> {
@@ -136,7 +136,7 @@ internal fun ResourcePatchContext.paintAmoledResources(background: String?): Lis
  * Every name the switch adds starts with this. The extension finds them by name, which is why an
  * APK already holding one is refused rather than patched twice.
  */
-internal const val AMOLED_RESTORE_PREFIX = "hushfeed_amoled_"
+internal const val AMOLED_RESTORE_PREFIX = "adrmodtt_amoled_"
 
 /** TikTok's own value of a background color the patch repaints, kept under this name. */
 internal fun twinColor(name: String) = "${AMOLED_RESTORE_PREFIX}twin_$name"

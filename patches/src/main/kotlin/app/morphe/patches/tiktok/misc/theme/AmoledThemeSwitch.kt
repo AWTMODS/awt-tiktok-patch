@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.theme
 
@@ -216,7 +216,7 @@ internal fun BytecodePatchContext.dialogSites(): List<DialogSite> {
 }
 
 /**
- * The hooks that put TikTok's own dark grays back while AMOLED dark mode is off in Hushfeed
+ * The hooks that put TikTok's own dark grays back while AMOLED dark mode is off in Adrmodtt
  * settings (#372). The resource side keeps TikTok's value of every surface it repaints beside it,
  * under a theme attribute of its own, and adds styles that point each surface back at that value.
  * The extension applies those styles to a theme right after TikTok builds it, and does nothing
@@ -273,7 +273,7 @@ internal fun BytecodePatchContext.hookAmoledThemeSwitch(): AmoledThemeSwitchSite
     return AmoledThemeSwitchSites(activity.originalMethod, applyStyles, setThemes, wrappers, dialogs)
 }
 
-/** The switch for AMOLED dark theme in Hushfeed settings, and the hooks it drives (#372). */
+/** The switch for AMOLED dark theme in Adrmodtt settings, and the hooks it drives (#372). */
 internal val amoledThemeSwitchPatch = bytecodePatch {
     dependsOn(settingsPatch, sharedExtensionPatch)
     execute {

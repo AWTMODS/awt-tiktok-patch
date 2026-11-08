@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.inbox;
 
@@ -486,10 +486,10 @@ public final class AutoStreak {
 
     /**
      * Runs a send on a thread of its own. A send can wait most of a minute for messaging, and the
-     * shared background pool's three threads carry every other task Hushfeed has.
+     * shared background pool's three threads carry every other task Adrmodtt has.
      */
     private static void onSendThread(Runnable task) {
-        Thread thread = new Thread(task, "hushfeed-auto-streak");
+        Thread thread = new Thread(task, "adrmodtt-auto-streak");
         thread.setDaemon(true);
         thread.start();
     }

@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -25,7 +25,7 @@ import com.google.gson.JsonPrimitive
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-internal const val DEFAULT_SETTINGS_ASSET = "assets/hushfeed-defaults-v1.json"
+internal const val DEFAULT_SETTINGS_ASSET = "assets/adrmodtt-defaults-v1.json"
 
 /** The same DSL, with native Morphe options added to every configurable TikTok patch. */
 fun configurableBytecodePatch(

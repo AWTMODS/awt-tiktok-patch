@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  * Follows na-x-ril/onlynazril-patches (GPL-3.0).
@@ -362,14 +362,14 @@ public final class CaptchaGate {
 
     /**
      * A browsing puzzle the switch would have hidden reached the reader because the switch is
-     * off, its default, and nothing on screen says Hushfeed has one (#87). The first such puzzle
+     * off, its default, and nothing on screen says Adrmodtt has one (#87). The first such puzzle
      * of a session names the switch; a puzzle the switch would show anyway (a write's, an
      * account check, signed out) never does.
      */
     private static void pointToTheSetting(String checkId) {
         if (!pointedThisSession.compareAndSet(false, true)) return;
         Logger.printInfo(() -> "Named Hide CAPTCHA popups on browsing check " + checkId);
-        Utils.showToastLong(L10n.t("Hide CAPTCHA popups in Hushfeed skips these"));
+        Utils.showToastLong(L10n.t("Hide CAPTCHA popups in Adrmodtt skips these"));
     }
 
     /**

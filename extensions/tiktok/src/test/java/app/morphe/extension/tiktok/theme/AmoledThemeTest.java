@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.theme;
 
@@ -144,7 +144,7 @@ public class AmoledThemeTest {
         assertFalse("decided once there's a context", AmoledTheme.on());
     }
 
-    @Test public void pausingHushfeedReadsAsOff() {
+    @Test public void pausingAdrmodttReadsAsOff() {
         AmoledTheme.setForTests(BLACK, lightRestore());
         PausedProcess.set(true);
         assertFalse(AmoledTheme.on());
@@ -185,12 +185,12 @@ public class AmoledThemeTest {
     @SuppressWarnings("deprecation")
     public void lookUpNumbersTheResourcesUntilOneIsMissing() {
         Map<String, Integer> named = new HashMap<>();
-        named.put("attr/hushfeed_amoled_stock_0", 0x7f010001);
-        named.put("attr/hushfeed_amoled_stock_1", 0x7f010002);
-        named.put("attr/hushfeed_amoled_stock_2", 0x7f010003);
-        named.put("style/hushfeed_amoled_restore_0", 0x7f100001);
-        named.put("style/hushfeed_amoled_restore_1", 0x7f100002);
-        named.put("style/hushfeed_amoled_restore_all", 0x7f100009);
+        named.put("attr/adrmodtt_amoled_stock_0", 0x7f010001);
+        named.put("attr/adrmodtt_amoled_stock_1", 0x7f010002);
+        named.put("attr/adrmodtt_amoled_stock_2", 0x7f010003);
+        named.put("style/adrmodtt_amoled_restore_0", 0x7f100001);
+        named.put("style/adrmodtt_amoled_restore_1", 0x7f100002);
+        named.put("style/adrmodtt_amoled_restore_all", 0x7f100009);
         Resources base = app().getResources();
         Resources resources = new Resources(base.getAssets(), base.getDisplayMetrics(), base.getConfiguration()) {
             @Override

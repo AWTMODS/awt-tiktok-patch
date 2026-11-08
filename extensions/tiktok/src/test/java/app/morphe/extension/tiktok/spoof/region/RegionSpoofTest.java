@@ -371,7 +371,7 @@ public class RegionSpoofTest {
             PausedProcess.set(true);
             Map<String, String> paused = liveParams();
             liveFeed(paused);
-            assertEquals("a paused Hushfeed set a LIVE feed country", liveParams(), paused);
+            assertEquals("a paused Adrmodtt set a LIVE feed country", liveParams(), paused);
         } finally {
             PausedProcess.set(false);
             Settings.LIVE_FEED_COUNTRIES.save("");
@@ -670,7 +670,7 @@ public class RegionSpoofTest {
         assertEquals("Europe/Belgrade", tz.value);
     }
 
-    @Test public void aTypedZoneDoesNothingWhileMatchLocaleIsOffOrHushfeedPauses() {
+    @Test public void aTypedZoneDoesNothingWhileMatchLocaleIsOffOrAdrmodttPauses() {
         TimeZone.setDefault(TimeZone.getTimeZone(PHONE_ZONE));
         Settings.SIM_SPOOF_TIME_ZONE.save("Asia/Tokyo");
         Settings.REGION_SPOOF.save(false);
@@ -683,7 +683,7 @@ public class RegionSpoofTest {
         assertEquals(PHONE_ZONE, TimeZone.getDefault().getID());
     }
 
-    @Test public void theZoneGoesBackToThePhonesWhenTheSettingGoesOffOrHushfeedPauses() {
+    @Test public void theZoneGoesBackToThePhonesWhenTheSettingGoesOffOrAdrmodttPauses() {
         for (Runnable off : new Runnable[]{
                 () -> Settings.REGION_SPOOF.save(false),
                 () -> Settings.SIM_SPOOF.save(false),

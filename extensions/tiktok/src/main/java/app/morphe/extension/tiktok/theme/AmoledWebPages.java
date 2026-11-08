@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.theme;
 
@@ -25,7 +25,7 @@ import app.morphe.extension.tiktok.privacy.BrowserPrivacyGuard;
  */
 public final class AmoledWebPages {
     private static final String HOOK_FAMILY = "amoled web pages";
-    static final String STYLE_ID = "hushfeed-amoled";
+    static final String STYLE_ID = "adrmodtt-amoled";
 
     /**
      * The web tokens behind the dark tiers the resource side paints: UIPageGrouped2 (Activity
@@ -50,7 +50,7 @@ public final class AmoledWebPages {
     static void onPage(WebView webView, String url, int argb) {
         try {
             if (webView == null || argb == 0 || !BrowserPrivacyGuard.isTrustedAppPage(url)) return;
-            // Off in Hushfeed settings, the pages keep TikTok's grays like the app (#372).
+            // Off in Adrmodtt settings, the pages keep TikTok's grays like the app (#372).
             if (!AmoledTheme.on()) return;
             HookStatus.bound(HOOK_FAMILY, cssColor(argb));
             // TikTok hands one page event down a chain of its clients, so a page can hear this a

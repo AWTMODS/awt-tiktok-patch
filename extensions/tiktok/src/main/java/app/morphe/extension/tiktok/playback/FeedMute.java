@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.playback;
 
@@ -688,7 +688,7 @@ public final class FeedMute {
             List<String> lines = new ArrayList<>();
             boolean saved = Settings.FEED_MUTED.savedValue();
             lines.add("Mute feed videos: " + (saved ? "on" : "off"));
-            if (saved && !Settings.FEED_MUTED.get()) lines.add("Hushfeed is paused, so the feed plays with its sound");
+            if (saved && !Settings.FEED_MUTED.get()) lines.add("Adrmodtt is paused, so the feed plays with its sound");
             // The saved choice, like the line above: Pause reads every switch as off, which would
             // report a button the reader never turned off.
             lines.add("Mute button on the feed: " + (Settings.FEED_MUTE_BUTTON.savedValue() ? "shown" : "turned off"));

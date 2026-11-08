@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.feed;
 
@@ -48,7 +48,7 @@ import app.morphe.extension.tiktok.settings.preference.SettingsUi;
 public final class LikedJump {
     /** The first year the picker offers: musical.ly accounts carried their likes into TikTok. */
     static final int FIRST_YEAR = 2014;
-    static final String CHIP_TAG = "hushfeed_liked_jump_chip";
+    static final String CHIP_TAG = "adrmodtt_liked_jump_chip";
     private static final String HOOK = "liked jump";
 
     private static final Object LOCK = new Object();

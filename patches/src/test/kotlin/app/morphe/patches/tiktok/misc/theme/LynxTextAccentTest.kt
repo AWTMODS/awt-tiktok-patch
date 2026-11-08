@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.theme
 
@@ -139,19 +139,19 @@ class LynxTextAccentTest {
         val (plain, system) = lynxColorEntries(false, "#2D7FF9")
         assertNull(system)
         val colors = colors(plain)
-        assertEquals(listOf("hushfeed_lynx_e10543", "hushfeed_lynx_ff576f"), colors.keys.toList())
-        assertEquals(accentShade("#FF576F", "#2D7FF9").lowercase(), colors.getValue("hushfeed_lynx_ff576f"))
-        assertEquals(accentShade("#E10543", "#2D7FF9").lowercase(), colors.getValue("hushfeed_lynx_e10543"))
+        assertEquals(listOf("adrmodtt_lynx_e10543", "adrmodtt_lynx_ff576f"), colors.keys.toList())
+        assertEquals(accentShade("#FF576F", "#2D7FF9").lowercase(), colors.getValue("adrmodtt_lynx_ff576f"))
+        assertEquals(accentShade("#E10543", "#2D7FF9").lowercase(), colors.getValue("adrmodtt_lynx_e10543"))
     }
 
     @Test
     fun `the wallpaper choice gives each Lynx red back below Android 12 and its system step on it`() {
         val (plain, system) = lynxColorEntries(true, TIKTOK_ACCENT)
-        assertEquals(mapOf("hushfeed_lynx_e10543" to "#e10543", "hushfeed_lynx_ff576f" to "#ff576f"), colors(plain))
+        assertEquals(mapOf("adrmodtt_lynx_e10543" to "#e10543", "adrmodtt_lynx_ff576f" to "#ff576f"), colors(plain))
         assertEquals(
             mapOf(
-                "hushfeed_lynx_e10543" to "@android:color/system_accent1_${wallpaperStep("#E10543")}",
-                "hushfeed_lynx_ff576f" to "@android:color/system_accent1_${wallpaperStep("#FF576F")}",
+                "adrmodtt_lynx_e10543" to "@android:color/system_accent1_${wallpaperStep("#E10543")}",
+                "adrmodtt_lynx_ff576f" to "@android:color/system_accent1_${wallpaperStep("#FF576F")}",
             ),
             colors(system!!),
         )
@@ -168,7 +168,7 @@ class LynxTextAccentTest {
             plain.writeText("<resources>\n    <color name=\"white\">#ffffffff</color>\n</resources>\n")
             appendColorEntries(plain, lynxColorEntries(false, "#2D7FF9").first)
             val joined = plain.readText()
-            assertTrue(joined, joined.contains("<color name=\"white\">#ffffffff</color>\n    <color name=\"hushfeed_lynx_e10543\">"))
+            assertTrue(joined, joined.contains("<color name=\"white\">#ffffffff</color>\n    <color name=\"adrmodtt_lynx_e10543\">"))
             assertEquals("one closing tag", 1, Regex("</resources>").findAll(joined).count())
             assertTrue("a preset writes nothing for v31", !system.exists())
             try {

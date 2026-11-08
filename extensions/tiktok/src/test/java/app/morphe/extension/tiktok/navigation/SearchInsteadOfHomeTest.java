@@ -141,7 +141,7 @@ public class SearchInsteadOfHomeTest {
         assertNull("one tap opened two pages", nextStarted());
     }
 
-    @Test public void holdingHomeStillOpensHushfeedSettingsAndNotSearch() {
+    @Test public void holdingHomeStillOpensAdrmodttSettingsAndNotSearch() {
         installAndResume();
 
         long down = SystemClock.uptimeMillis();

@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.theme;
 
@@ -29,8 +29,8 @@ public class LynxAccentTest {
 
     @Before
     public void setUp() {
-        ids.put("hushfeed_lynx_ff576f", 1);
-        ids.put("hushfeed_lynx_e10543", 2);
+        ids.put("adrmodtt_lynx_ff576f", 1);
+        ids.put("adrmodtt_lynx_e10543", 2);
         colors.put(1, 0xFF8AB4F8);
         colors.put(2, 0xFF0B57D0);
         LynxAccent.setPaletteForTests(new LynxAccent.Palette() {
@@ -64,7 +64,7 @@ public class LynxAccentTest {
         assertEquals(0xFFFE2C55, LynxAccent.color(0xFFFE2C55));
         assertEquals(0xFF161823, LynxAccent.color(0xFF161823));
         assertEquals(0xFFFE2C55, LynxAccent.color(0xFFFE2C55));
-        assertEquals(List.of("hushfeed_lynx_fe2c55", "hushfeed_lynx_161823"), asked);
+        assertEquals(List.of("adrmodtt_lynx_fe2c55", "adrmodtt_lynx_161823"), asked);
     }
 
     @Test

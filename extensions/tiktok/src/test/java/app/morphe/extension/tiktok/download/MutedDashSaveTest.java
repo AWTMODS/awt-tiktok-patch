@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.download;
 
@@ -120,7 +120,7 @@ public class MutedDashSaveTest {
 
         File storage = Environment.getExternalStorageDirectory();
         Set<String> before = listed(storage);
-        assertTrue("a muted DASH save is Hushfeed's", VideoDownloads.start(post, RuntimeEnvironment.getApplication()));
+        assertTrue("a muted DASH save is Adrmodtt's", VideoDownloads.start(post, RuntimeEnvironment.getApplication()));
         drainPool();
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 

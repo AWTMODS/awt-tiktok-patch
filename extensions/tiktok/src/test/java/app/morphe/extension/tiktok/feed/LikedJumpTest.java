@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.feed;
 
@@ -59,7 +59,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter;
 /**
  * Jump to a date on Liked grids (#350): the Liked list's first request starts at the chosen date
  * for the profile it first went to and nowhere else, later pages and a switched-off or paused
- * Hushfeed go as TikTok asked, the dates and names the picker uses, and the chip that picks a year
+ * Adrmodtt go as TikTok asked, the dates and names the picker uses, and the chip that picks a year
  * and a month, names the grid's jump and goes back to the newest likes.
  */
 @RunWith(RobolectricTestRunner.class)
@@ -145,7 +145,7 @@ public class LikedJumpTest {
         assertEquals(0L, LikedJump.cursor("", "MS4mine", 0, 0L));
     }
 
-    @Test public void pausedHushfeedSendsTikToksCursor() {
+    @Test public void pausedAdrmodttSendsTikToksCursor() {
         Settings.LIKED_JUMP_TO_DATE.save(true);
         LikedJump.choose(1_650_000_000_000L, "Apr 2022");
         setPaused(true);

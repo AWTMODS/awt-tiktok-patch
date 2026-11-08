@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.theme
 
@@ -26,7 +26,7 @@ import org.junit.Test
  * its UIPageGrouped2 field in toString, exactly one palette builder starts that field at TikTok's
  * dark gray, every card color that builder writes is a dark gray packed by one static `(J)J`
  * (a shift left by 32, the Compose Color packing, which the extension packs the AMOLED color by),
- * and after the repaint each of those writes stores what the switch in Hushfeed settings answers
+ * and after the repaint each of those writes stores what the switch in Adrmodtt settings answers
  * for TikTok's packed color, with TikTok's own instructions in order.
  * The light palettes and the high contrast dark one are other builders and aren't touched.
  */

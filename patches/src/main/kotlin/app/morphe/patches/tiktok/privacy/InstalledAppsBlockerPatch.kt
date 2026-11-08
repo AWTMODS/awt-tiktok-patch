@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.privacy
 
@@ -20,7 +20,7 @@ val installedAppsBlockerPatch = bytecodePatch(
     name = "Block installed app scanning",
     description = "Gives TikTok an empty list when it asks which apps are on your phone, so " +
         "it learns less about you. Opening another app from TikTok still works. Starts off. Turn " +
-        "it on in Hushfeed settings > Privacy.",
+        "it on in Adrmodtt settings > Privacy.",
 ) {
     category("Privacy")
     dependsOn(settingsPatch, sharedExtensionPatch)

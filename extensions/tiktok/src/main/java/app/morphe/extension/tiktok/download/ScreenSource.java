@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.download;
 
@@ -319,7 +319,7 @@ final class ScreenSource implements LiveRecorder.Source {
             videoCodec.start();
             display =
                     projection.createVirtualDisplay(
-                            "hushfeed-live",
+                            "adrmodtt-live",
                             width,
                             height,
                             dpi,
@@ -702,7 +702,7 @@ final class ScreenSource implements LiveRecorder.Source {
             this.capture = capture;
             this.backlog = backlog;
             this.chunkBytes = chunkBytes;
-            thread = new Thread(this, "hushfeed-live-sound");
+            thread = new Thread(this, "adrmodtt-live-sound");
             thread.setDaemon(true);
         }
 

@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.theme
 
@@ -57,7 +57,7 @@ class AmoledRestoreResourcesTest {
         val colors = parse("""<resources><color name="a2c">#ff121212</color><color name="x">#ffffffff</color></resources>""")
         assertEquals(1, addTwinColors(colors, setOf("a2c", "a2e")))
         assertEquals(
-            listOf("a2c" to "#ff121212", "x" to "#ffffffff", "hushfeed_amoled_twin_a2c" to "#ff121212"),
+            listOf("a2c" to "#ff121212", "x" to "#ffffffff", "adrmodtt_amoled_twin_a2c" to "#ff121212"),
             colors.elements("color").map { it.getAttribute("name") to it.textContent },
         )
 
@@ -73,19 +73,19 @@ class AmoledRestoreResourcesTest {
         assertEquals(3, addStockSiblings(styles, restorable, setOf("a2c")))
         assertEquals(
             listOf(
-                "agp" to "#ff282828", "hushfeed_amoled_stock_0" to "#ff282828",
-                "g5d" to "@color/a2c", "hushfeed_amoled_stock_1" to "@color/hushfeed_amoled_twin_a2c",
+                "agp" to "#ff282828", "adrmodtt_amoled_stock_0" to "#ff282828",
+                "g5d" to "@color/a2c", "adrmodtt_amoled_stock_1" to "@color/adrmodtt_amoled_twin_a2c",
                 "other" to "?attr/agp",
             ),
             styles.items("Dark"),
         )
-        assertEquals(listOf("agp" to "#ffffffff", "hushfeed_amoled_stock_0" to "#ffffffff"), styles.items("Light"))
+        assertEquals(listOf("agp" to "#ffffffff", "adrmodtt_amoled_stock_0" to "#ffffffff"), styles.items("Light"))
 
         addRestoreStyles(styles, restorable)
-        assertEquals(listOf("agp" to "?attr/hushfeed_amoled_stock_0"), styles.items("hushfeed_amoled_restore_0"))
-        assertEquals(listOf("g5d" to "?attr/hushfeed_amoled_stock_1"), styles.items("hushfeed_amoled_restore_1"))
+        assertEquals(listOf("agp" to "?attr/adrmodtt_amoled_stock_0"), styles.items("adrmodtt_amoled_restore_0"))
+        assertEquals(listOf("g5d" to "?attr/adrmodtt_amoled_stock_1"), styles.items("adrmodtt_amoled_restore_1"))
         assertEquals(
-            listOf("agp" to "?attr/hushfeed_amoled_stock_0", "g5d" to "?attr/hushfeed_amoled_stock_1"),
+            listOf("agp" to "?attr/adrmodtt_amoled_stock_0", "g5d" to "?attr/adrmodtt_amoled_stock_1"),
             styles.items(RESTORE_ALL_STYLE),
         )
 
@@ -100,9 +100,9 @@ class AmoledRestoreResourcesTest {
         declareStockAttributes(attrs, listOf("agp", "g5d", "android:colorBackground"))
         assertEquals(
             listOf(
-                "hushfeed_amoled_stock_0" to "color",
-                "hushfeed_amoled_stock_1" to "reference|color",
-                "hushfeed_amoled_stock_2" to "reference|color",
+                "adrmodtt_amoled_stock_0" to "color",
+                "adrmodtt_amoled_stock_1" to "reference|color",
+                "adrmodtt_amoled_stock_2" to "reference|color",
             ),
             attrs.elements("attr").drop(2).map { it.getAttribute("name") to it.getAttribute("format") },
         )
@@ -116,15 +116,15 @@ class AmoledRestoreResourcesTest {
         val patched = parse(
             """
             <resources>
-              <attr name="hushfeed_amoled_stock_0" format="color"/>
-              <color name="hushfeed_amoled_twin_a2c">#ff121212</color>
-              <style name="hushfeed_amoled_restore_all"/>
-              <string name="hushfeed_amoled_note">x</string>
+              <attr name="adrmodtt_amoled_stock_0" format="color"/>
+              <color name="adrmodtt_amoled_twin_a2c">#ff121212</color>
+              <style name="adrmodtt_amoled_restore_all"/>
+              <string name="adrmodtt_amoled_note">x</string>
             </resources>
             """,
         )
         assertEquals(
-            listOf("hushfeed_amoled_stock_0", "hushfeed_amoled_twin_a2c", "hushfeed_amoled_restore_all"),
+            listOf("adrmodtt_amoled_stock_0", "adrmodtt_amoled_twin_a2c", "adrmodtt_amoled_restore_all"),
             restoreNamesTaken(listOf(clean, patched)),
         )
     }

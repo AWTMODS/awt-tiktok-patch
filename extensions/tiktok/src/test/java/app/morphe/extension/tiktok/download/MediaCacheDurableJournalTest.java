@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.download;
 
@@ -33,7 +33,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE, sdk = 29)
 public class MediaCacheDurableJournalTest {
     private static final Uri COLLECTION = Uri.parse("content://media/external_primary/downloads");
-    private static final String FOLDER = "Download/Hushfeed";
+    private static final String FOLDER = "Download/Adrmodtt";
     @Rule public TemporaryFolder temporary = new TemporaryFolder();
     private Context context;
     private File cache;

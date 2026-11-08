@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.misc.settings
 
@@ -149,7 +149,7 @@ internal fun MutableMethod.handTopTabOver(site: TopTabBindSite) {
 }
 
 /**
- * Hands every top tab TikTok binds to [TOP_TAB_HOOK], so a long press on For You opens Hushfeed
+ * Hands every top tab TikTok binds to [TOP_TAB_HOOK], so a long press on For You opens Adrmodtt
  * settings. Answers false and changes nothing when this build doesn't bind its top tabs that way
  * exactly once: For You then stays as it is, and the settings row and the Home tab still open the
  * page.

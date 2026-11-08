@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.extension.tiktok.privacy;
 
@@ -15,7 +15,7 @@ import app.morphe.extension.tiktok.settings.SettingsStatus;
  * which every search path reaches, and ManualSearchPvStore's per-query search log. Neither is
  * reached for reading, deleting or clearing, so history already saved keeps showing and can
  * still be removed. Read on every call, so a change applies to the next search, and while
- * Hushfeed is paused the switch answers off and TikTok records as it ships.
+ * Adrmodtt is paused the switch answers off and TikTok records as it ships.
  */
 @SuppressWarnings("unused")
 public final class SearchHistoryRecording {

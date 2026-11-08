@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  */
 package app.morphe.patches.tiktok.interaction.engagement
 
@@ -324,7 +324,7 @@ val showEngagementRatePatch = bytecodePatch(
     name = "Show engagement rate",
     description = "Shows how many people liked, commented on, shared or saved a video " +
         "compared with how many watched it, next to the creator's name. Starts off. Turn it on in " +
-        "Hushfeed settings > Feed screen.",
+        "Adrmodtt settings > Feed screen.",
 ) {
     category("Feed")
     // The author row install and the player's current video come with the row patch, the grid

@@ -135,7 +135,7 @@ class BuildDetailsPatchTest {
 
     @Test fun `provenance keeps exact hashes and distinguishes dirty and legacy bundles`() {
         val first = record("clean")
-        val dirty = manifest().apply { putValue("Hushfeed-Source-Clean", "false"); putValue("Hushfeed-Source-End", "D".repeat(64)) }
+        val dirty = manifest().apply { putValue("Adrmodtt-Source-Clean", "false"); putValue("Adrmodtt-Source-End", "D".repeat(64)) }
         val second = record("dirty", facts = dirty)
         assertNotEquals(first.readText(), second.readText())
         assertEquals("false", second.facts()["source_clean"])
@@ -145,8 +145,8 @@ class BuildDetailsPatchTest {
         assertEquals("1.14.2", second.facts()["patcher_applying_engine"])
         val invalid = manifest().apply {
             putValue("Version", "https://SOURCE_SENTINEL.invalid/")
-            putValue("Hushfeed-Source-Commit", "account=SOURCE_SENTINEL")
-            putValue("Hushfeed-Source-End", "bad")
+            putValue("Adrmodtt-Source-Commit", "account=SOURCE_SENTINEL")
+            putValue("Adrmodtt-Source-End", "bad")
         }
         val third = record("invalid", facts = invalid)
         assertEquals("unknown", third.facts()["source_clean"])
@@ -254,7 +254,7 @@ class BuildDetailsPatchTest {
         // AMOLED repaints one Compose palette builder in place (#152), and since #171 it also paints
         // the see-through comment bar under an opened post, which goes through the extension. Since
         // #263 it also hands its color to the activity center's web pages. Since #372 its switch in
-        // Hushfeed settings puts TikTok's grays back, through theme hooks of its own and settings.
+        // Adrmodtt settings puts TikTok's grays back, through theme hooks of its own and settings.
         val amoled = dependencies(amoledThemePatch)
         assertTrue("AMOLED has no metadata dependency", buildDetailsPatch in amoled)
         assertTrue("AMOLED lost the comment bar hook", sharedExtensionPatch in amoled)
@@ -264,7 +264,7 @@ class BuildDetailsPatchTest {
             4, amoledOwn.size)
         assertTrue(amoledOwn.all { it.name == null })
         // The core asset strip returns out of the content credential service's start before it
-        // loads the emptied library (#211). Bytecode too, and just as free of Hushfeed's own code.
+        // loads the emptied library (#211). Bytecode too, and just as free of Adrmodtt's own code.
         val core = dependencies(coreAssetDebloatPatch)
         assertTrue("the asset strip has no metadata dependency", buildDetailsPatch in core)
         assertEquals("the asset strip's bytecode is the C2PA guard alone",
@@ -294,8 +294,8 @@ class BuildDetailsPatchTest {
 
     private fun manifest() = Attributes().apply {
         putValue("Version", "0.66.0"); putValue("Patcher-Version", "1.14.1")
-        putValue("Hushfeed-Source-Commit", "a".repeat(40)); putValue("Hushfeed-Source-Clean", "true")
-        putValue("Hushfeed-Source-Start", fingerprint); putValue("Hushfeed-Source-End", fingerprint)
+        putValue("Adrmodtt-Source-Commit", "a".repeat(40)); putValue("Adrmodtt-Source-Clean", "true")
+        putValue("Adrmodtt-Source-Start", fingerprint); putValue("Adrmodtt-Source-End", fingerprint)
     }
 
     private fun File.facts() = readLines().associate { it.substringBefore('=') to it.substringAfter('=') }

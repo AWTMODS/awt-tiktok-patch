@@ -1,6 +1,6 @@
 /*
- * Copyright 2026 Hushfeed contributors
- * https://github.com/SysAdminDoc/hushfeed
+ * Copyright 2026 Adrmodtt contributors
+ * https://github.com/SysAdminDoc/adrmodtt
  *
  * Built on icysymmetra/tiktok-patches-for-morphe (GPL-3.0).
  */
@@ -278,7 +278,7 @@ val advancedDownloadsPatch = bytecodePatch(
         "sound on its own or a photo post as one video, hold a profile picture or story to save " +
         "it, save a story or a video's cover from the share sheet, put a save button on the " +
         "video, and pick videos on a profile grid to save in one run. Starts off. Turn it on in " +
-        "Hushfeed settings > Downloads.",
+        "Adrmodtt settings > Downloads.",
 ) {
     category("Downloads")
     compatibleWith(*AppCompatibilities.tiktok())
