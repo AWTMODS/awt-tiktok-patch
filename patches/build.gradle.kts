@@ -302,10 +302,10 @@ patches {
     about {
         name = "adrmodtt"
         description = "adrmodtt patches for TikTok 47.7.3, built for Morphe. Fewer accidental taps, less noise, more control over the feed, inbox, comments and downloads."
-        source = "https://github.com/SysAdminDoc/adrmodtt"
-        author = "SysAdminDoc"
-        contact = "https://github.com/SysAdminDoc/adrmodtt/issues"
-        website = "https://github.com/SysAdminDoc/adrmodtt"
+        source = "https://github.com/AWTMODS/awt-tiktok-patch"
+        author = "AWTMODS"
+        contact = "https://github.com/AWTMODS/awt-tiktok-patch/issues"
+        website = "https://github.com/AWTMODS/awt-tiktok-patch"
         license = "GNU General Public License v3.0, with additional GPL section 7 requirements"
     }
 }
