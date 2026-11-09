@@ -1,11 +1,11 @@
 ![Adrmodtt. Take back your feed with focused controls for filtering, gestures, playback, downloads and privacy.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="CHANGELOG.md"><img alt="version" src="https://img.shields.io/badge/version-0.81.0-6f42c1.svg" /></a>
+  <a href="CHANGELOG.md"><img alt="version" src="https://img.shields.io/badge/version-1.0.0-6f42c1.svg" /></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-GPLv3-blue.svg" /></a>
   <a href="https://www.android.com/"><img alt="platform" src="https://img.shields.io/badge/platform-Android-3ddc84.svg" /></a>
   <a href="https://github.com/MorpheApp/morphe-manager"><img alt="Morphe" src="https://img.shields.io/badge/works%20with-Morphe-00b894.svg" /></a>
-  <a href="https://github.com/SysAdminDoc/adrmodtt/discussions"><img alt="Discussions" src="https://img.shields.io/github/discussions/SysAdminDoc/adrmodtt?color=0969da" /></a>
+  <a href="https://github.com/AWTMODS/awt-tiktok-patch/discussions"><img alt="Discussions" src="https://img.shields.io/github/discussions/AWTMODS/awt-tiktok-patch?color=0969da" /></a>
   <a href="https://www.apkmirror.com/apk/tiktok-pte-ltd/tik-tok-including-musical-ly/"><img alt="TikTok 47.7.2" src="https://img.shields.io/badge/TikTok-47.7.2-ff0050.svg" /></a>
 </p>
 
@@ -30,9 +30,9 @@ Most switches start off, so a freshly patched TikTok looks and works the way it 
 > [!IMPORTANT]
 > Adrmodtt targets the global TikTok package, `com.zhiliaoapp.musically`, version [47.7.2](https://www.apkmirror.com/apk/tiktok-pte-ltd/tik-tok-including-musical-ly/tiktok-47-7-2-release/). Patch that exact build, as the bundle or the APK ([step 1](#install) says which). See [Supported target](#supported-target) for the build details.
 
-Adrmodtt v0.81.0 contains 147 patches for TikTok 47.7.2. New in this one: TikTok moves to 47.7.2. You can keep your own watch history, hide read receipts and clear out reposts, likes or Favorites in one go, and the settings have a new look in TikTok's colors. It needs Morphe Manager 2.4.0 or newer.
+Adrmodtt v1.0.0 contains 147 patches for TikTok 47.7.2. New in this one: TikTok moves to 47.7.2. You can keep your own watch history, hide read receipts and clear out reposts, likes or Favorites in one go, and the settings have a new look in TikTok's colors. It needs Morphe Manager 2.4.0 or newer.
 
-The main branch contains 147 patches, the same set as v0.81.0.
+The main branch contains 147 patches, the same set as v1.0.0.
 
 ## What it changes
 
