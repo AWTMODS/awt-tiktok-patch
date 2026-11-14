@@ -1,7 +1,7 @@
 ![Adrmodtt. Take back your feed with focused controls for filtering, gestures, playback, downloads and privacy.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="CHANGELOG.md"><img alt="version" src="https://img.shields.io/badge/version-0.82.0-6f42c1.svg" /></a>
+  <a href="CHANGELOG.md"><img alt="version" src="https://img.shields.io/badge/version-1.0.0-6f42c1.svg" /></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-GPLv3-blue.svg" /></a>
   <a href="https://www.android.com/"><img alt="platform" src="https://img.shields.io/badge/platform-Android-3ddc84.svg" /></a>
   <a href="https://github.com/MorpheApp/morphe-manager"><img alt="Morphe" src="https://img.shields.io/badge/works%20with-Morphe-00b894.svg" /></a>
@@ -19,9 +19,9 @@
   <sub><em>If Adrmodtt makes TikTok better for you, a coffee helps me keep testing patches and maintaining them as TikTok changes.</em></sub>
 </p>
 
-# Adrmodtt
+# AWT TikTok Patch
 
-Adrmodtt is a set of [Morphe](https://github.com/MorpheApp/morphe-manager) patches for TikTok. You bring the TikTok APK, Morphe Manager patches it on your phone, and the patched app gets a Adrmodtt page in its settings with a switch for each patch you picked. Hide the ads and the clutter over videos. Make Follow and Like ask for a second tap. Save videos without the watermark, and stop the usage statistics and crash reports TikTok sends home.
+AWT TikTok Patch is a set of [Morphe](https://github.com/MorpheApp/morphe-manager) patches for TikTok. You bring the TikTok APK, Morphe Manager patches it on your phone, and the patched app gets a Adrmodtt page in its settings with a switch for each patch you picked. Hide the ads and the clutter over videos. Make Follow and Like ask for a second tap. Save videos without the watermark, and stop the usage statistics and crash reports TikTok sends home.
 
 Most switches start off, so a freshly patched TikTok looks and works the way it ships until you turn something on. What changed in each version is in the [changelog](CHANGELOG.md).
 
@@ -30,7 +30,7 @@ Most switches start off, so a freshly patched TikTok looks and works the way it 
 > [!IMPORTANT]
 > Adrmodtt targets the global TikTok package, `com.zhiliaoapp.musically`, version [47.7.3](https://www.apkmirror.com/apk/tiktok-pte-ltd/tik-tok-including-musical-ly/tiktok-47-7-3-release/). Patch that exact build, as the bundle or the APK ([step 1](#install) says which). See [Supported target](#supported-target) for the build details.
 
-Adrmodtt v0.82.0 contains 147 patches for TikTok 47.7.3. New in this one: TikTok moves to 47.7.3. You can jump to a date on your Liked grid, search your Liked and Favorites, fold long comments and put a short pause in front of For You. It needs Morphe Manager 2.5.0 or newer.
+AWT TikTok Patch v1.0.0 contains 147 patches for TikTok 47.7.3. New in this one: TikTok moves to 47.7.3. You can jump to a date on your Liked grid, search your Liked and Favorites, fold long comments and put a short pause in front of For You. It needs Morphe Manager 2.5.0 or newer.
 
 The main branch contains 148 patches, v0.82.0's set plus Fix Spotify login.
 
