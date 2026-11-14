@@ -6,6 +6,10 @@
  */
 package app.morphe.patches.tiktok.interaction.videooverlays
 
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.classDefByOrNull
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.packageMetadata
 import app.morphe.util.addInstruction
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.fieldAccess
@@ -212,6 +216,7 @@ val hideVideoOverlaysPatch = bytecodePatch(
         }
         // The interest buttons go with Hide surveys; the switch decides in the extension.
         interestButtons?.dropInterestButtons(PATCH_NAME)
+        interestButtons?.reportFeedComponents()
         if (repostChip != null) {
             repostChip.dropRepostChip(PATCH_NAME)
             repostBar?.dropRepostBar()

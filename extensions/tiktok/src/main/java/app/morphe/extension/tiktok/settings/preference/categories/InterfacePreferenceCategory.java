@@ -258,6 +258,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
             addPreference(new TogglePreference(context, "Show the Not interested button",
                     "Add a button beside the block control to send feedback about the current video.",
                     Settings.NOT_INTERESTED_BUTTON));
+            // The chooser adds to the feed filter's lists, so it needs the feed filter.
+            if (SettingsStatus.feedFilterEnabled) {
+                addPreference(new TogglePreference(context, "Also filter it",
+                        "After you tap Not interested, offer to skip the video's creator, sound or hashtags from now on.",
+                        Settings.NOT_INTERESTED_ALSO_FILTER));
+            }
         }
         if (SettingsStatus.feedMuteEnabled) {
             addPreference(new TogglePreference(context, "Show the mute button on videos",
@@ -368,6 +374,14 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                             Settings.LIKED_JUMP_TO_DATE
                     ));
                 }
+                if (SettingsStatus.likedGridSortEnabled) {
+                    addPreference(new TogglePreference(
+                            context,
+                            "Search Liked and Favorites grids",
+                            "Adds a Search button to the top of the Liked and Favorites grids. Type a word from a caption, a creator or a sound to see only the loaded videos that have it.",
+                            Settings.GRID_SEARCH
+                    ));
+                }
                 if (SettingsStatus.soundGridSortEnabled) {
                     addPreference(new ChoicePreference(context, "Sort loaded videos on sound pages",
                             Settings.SOUND_GRID_SORT,
@@ -378,6 +392,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                                     "least_viewed", "most_liked", "least_liked"})
                             .withNote("Sorts the videos on a sound's page the same way, loading up to 300 of them while an order is on."));
                 }
+                addPreference(new TogglePreference(
+                        context,
+                        "Drag handle and jump buttons on grids",
+                        "On long profile, Liked and sound grids, scrolling brings up a handle you can drag through what's loaded, plus Top, Back and End buttons. Back returns to where you were.",
+                        Settings.GRID_POSITION_CONTROLS
+                ));
             }
         }
         if (SettingsStatus.authorRegionEnabled) {
@@ -530,6 +550,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                         Settings.HIDE_FOLLOWING_LIVE_ROW
                 ));
             }
+            addPreference(new TogglePreference(
+                    context,
+                    "Glass Stories button on Following",
+                    "The Stories button at the top of the Following feed turns to glass with round ends. On Android 12 and up, the video behind it is blurred too.",
+                    Settings.GLASS_STORIES_PILL
+            ));
             if (SettingsStatus.storyRowButtonsEnabled) {
                 addPreference(new TogglePreference(
                         context,
@@ -871,8 +897,14 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
             addPreference(new TogglePreference(
                     context,
                     "See-through status bar",
-                    "Let the video reach the top of the screen on the main feed, with the clock and status icons over it. The tabs at the top stay where they are.",
+                    "Let the video reach the top of the screen, with the clock and status icons over it. Works on the main feed and on videos you open from search, a profile or your Liked and Favorites. The tabs at the top stay where they are.",
                     Settings.SEE_THROUGH_STATUS_BAR
+            ));
+            addPreference(new TogglePreference(
+                    context,
+                    "Shade behind the status bar",
+                    "A soft dark fade behind the clock and status icons, so they stay easy to read over a bright video. Needs See-through status bar.",
+                    Settings.STATUS_BAR_SHADE
             ));
             addPreference(new ChoicePreference(context, "Burn-in guard", Settings.BURN_IN_GUARD,
                     new String[]{"Off", "Dim when idle", "Dim when idle and shift"},

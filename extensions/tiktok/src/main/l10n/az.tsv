@@ -7,12 +7,16 @@ Couldn't add the caption. Saving without it.	Açıqlama əlavə olunmadı. Onsuz
 Dim when idle	Toxunulmayanda solğunlaşdır
 Dim when idle and shift	Toxunulmayanda solğunlaşdır və sürüşdür
 For OLED screens. After 5 seconds without a touch, the buttons, caption and tabs over the video dim to a quarter, and your next touch brings them back. Shift also moves everything on the feed a few pixels every 2 minutes.	OLED ekranlar üçün. 5 saniyə toxunulmadıqda videonun üzərindəki düymələr, başlıq və tablar dörddə birə qədər solğunlaşır, növbəti toxunuşunuz onları geri qaytarır. Sürüşdürmə həmçinin lentdəki hər şeyi hər 2 dəqiqədən bir bir neçə piksel tərpədir.
+Hashtags	Heşteqlər
 Importing new history ended Undo for the earlier clear. You can clear the imported history.	Yeni tarixçənin idxalı əvvəlki təmizləməni geri qaytarmaq imkanını bitirdi. İdxal olunmuş tarixçəni təmizləyə bilərsiniz.
 %1$d setting in that file can't be restored here and was skipped	Bu fayldakı %1$d ayar burada bərpa edilə bilmir və ötürüldü
 %1$d settings in that file can't be restored here and were skipped	Bu fayldakı %1$d ayar burada bərpa edilə bilmir və ötürüldü
 Import watch history	İzləmə tarixçəsini idxal et
 Keep the language picked in TikTok	TikTok-da seçilən dili saxla
 Freeze TikTok's experiments	TikTok-un təcrübələrini dondur
+Photos	Fotolar
+Places	Məkanlar
+Sounds	Səslər
 TikTok's servers keep sending it new settings, which is how it tests new layouts and features on people. With this on, TikTok keeps the ones it has now and ignores new ones. If something in TikTok stops working, turn this off so it can get fixes.	TikTok-un serverləri ona daim yeni ayarlar göndərir, yeni görünüşləri və funksiyaları insanlar üzərində belə sınayır. Bu açıq olanda TikTok indiki ayarlarını saxlayır və yenilərinə məhəl qoymur. TikTok-da nəsə işləməyi dayandırsa, düzəlişləri ala bilməsi üçün bunu söndür.
 Nothing is playing to speed up	Sürətləndirmək üçün oxunan heç nə yoxdur
 One language code, like en or es. Comments and captions TikTok translates come out in this language instead of the app's. Leave it empty to keep TikTok's choice.	Bir dil kodu, məsələn en və ya es. TikTok-un tərcümə etdiyi şərhlər və başlıqlar tətbiqin dili əvəzinə bu dildə çıxır. TikTok-un seçimini saxlamaq üçün boş buraxın.
@@ -36,6 +40,8 @@ Translate into	Bu dilə tərcümə et
 Type one language code here, like en.	Buraya bir dil kodu yazın, məsələn en.
 Use this account's TikTok JSON export, up to %1$s MB and %2$s entries. Dates without a time zone use this phone's time zone.	Bu hesabın TikTok JSON ixracını seçin. Fayl ən çox %1$s MB və %2$s qeyd ola bilər. Saat qurşağı olmayan tarixlər üçün bu telefonun saat qurşağı istifadə edilir.
 Sign in to TikTok before importing watch history.	İzləmə tarixçəsini idxal etməzdən əvvəl TikTok-a daxil olun.
+Users	İstifadəçilər
+Videos	Videolar
 When TikTok starts and decides the phone's language changed, it forgets the language you picked in its settings and follows the phone. With this on, your pick stays. Counts from TikTok's next start.	TikTok açılanda telefonun dilinin dəyişdiyinə qərar verərsə, ayarlarında seçdiyiniz dili atır və telefona uyğunlaşır. Bu yandırılanda seçiminiz qalır. TikTok-un növbəti açılışından etibarən keçərlidir.
 Write the username and caption on the video	İstifadəçi adını və açıqlamanı videonun üzərinə yaz
 Writing the caption on the video	Açıqlama videonun üzərinə yazılır
@@ -150,6 +156,26 @@ Forget the seen video.	İzlənmiş videonu unudun.
 Forget the video @%2$s has seen.	@%2$s tərəfindən izlənmiş videonu unudun.
 Got it	Aydındır
 Hide profile shortcuts	Profil qısayollarını gizlədin
+# context: Title of the checklist that hides tabs from the strip above a profile's videos
+Hide profile tabs	Profil tablarını gizlədin
+# context: Note under that title. Reposts and Liked videos are two of the checklist's rows, and the checklist never takes away every tab
+Pick the tabs to hide from the strip above a profile's videos, such as Reposts or Liked videos. One tab always stays. Restart TikTok to apply this.	Profilin videolarının üstündəki zolaqda gizlədiləcək tabları seçin, məsələn Repostlar və ya Bəyənilən videolar. Bir tab həmişə qalır. Tətbiq etmək üçün TikTok-u yenidən başladın.
+# context: Checklist row for the profile tab with the account's private videos (lock icon)
+Private videos	Şəxsi videolar
+# context: Checklist row for the profile tab with the videos the account reposted
+Reposts	Repostlar
+# context: Checklist row for the profile tab with the account's saved videos (bookmark icon)
+Favorites	Sevimlilər
+# context: Checklist row for the profile tab with the account's sounds
+Music	Musiqi
+# context: Checklist row for the profile tab with the account's camera effects
+Effects	Effektlər
+# context: Checklist row for the profile tab with the account's paid series and short dramas
+Series	Seriallar
+# context: Checklist row for the profile tab with the account's stickers
+Stickers	Stikerlər
+# context: Checklist row for the profile tab TikTok calls AI theater, with the account's AI-made videos
+AI theater	AI teatrı
 Hide profile shortcuts by name	Profil qısayollarını adına görə gizlədin
 Hide the status bar in LIVE rooms	LIVE otaqlarında status panelini gizlədin
 How much of a video you watch before it's hidden next time. Zero counts it after a few seconds.	Videonu növbəti dəfə gizlədilməzdən əvvəl nə qədər izləyirsiniz. Sıfır onu bir neçə saniyədən sonra hesab edir.
@@ -1126,7 +1152,7 @@ Still here. Nothing is waiting.	Hələ buradadır. Heç nə gözləmir.
 Still reading the record. Tap again in a moment.	Qeyd hələ oxunur. Bir azdan yenidən toxunun.
 Still saving the last one	Sonuncu hələ saxlanılır
 The last one is still waiting to start	Sonuncunun başlaması hələ gözlənilir
-Stops TikTok from sending usage reports, ad tracking and crash reports. TikTok's own diagnostic tools go quiet too.	TikTok-un istifadə hesabatlarını, reklam izləməsini və çökmə hesabatlarını göndərməsinin qarşısını alır. TikTok-un öz diaqnostika alətləri də susur.
+Stops TikTok from sending usage reports, ad tracking and crash reports. TikTok's own diagnostic tools go quiet too. The settings TikTok downloads to check its own requests still come through.	TikTok-un istifadə hesabatlarını, reklam izləməsini və çökmə hesabatlarını göndərməsinin qarşısını alır. TikTok-un öz diaqnostika alətləri də susur. TikTok-un öz sorğularını yoxlamaq üçün endirdiyi ayarlar isə yenə gəlir.
 Stops TikTok from slowing your screen to match each video's frame rate. On a 90 or 120 Hz phone, that request makes the whole app, scrolling too, run slower.	TikTok-un ekranınızı hər videonun kadr sürətinə uyğun yavaşlatmasının qarşısını alır. 90 və ya 120 Hz telefonda bu tələb bütün tətbiqi, o cümlədən sürüşdürməni yavaşladır.
 Keep the screen's brightness in the camera	Kamerada ekranın parlaqlığını saxlayın
 Stops TikTok from turning your screen brighter while you film, edit or post a video. The front flash still turns the screen white, but at your own brightness.	Video çəkərkən, redaktə edərkən və ya paylaşarkən TikTok-un ekranınızı daha parlaq etməsinin qarşısını alır. Ön flaş ekranı yenə də ağ edir, amma sizin öz parlaqlığınızda.
@@ -1648,7 +1674,7 @@ Stopped waiting for the file app. Nothing was exported.	Fayl tətbiqini gözləm
 Stopped waiting for the file app. It hasn't said yet whether the export was saved.	Fayl tətbiqini gözləmək dayandırıldı. O, ixracın saxlanılıb-saxlanılmadığını hələ bildirməyib.
 The export wasn't saved. Try again.	İxrac saxlanılmadı. Yenidən cəhd edin.
 Hide unpersonalized For You videos	Fərdiləşdirilməmiş Sənin üçün videolarını gizlədin
-Hide the fill-in videos TikTok sends to For You without picking them for you. When a whole batch is fill-in, it stays so the feed doesn't run dry.	TikTok-un Sənin üçün lentinə sizin üçün seçmədən göndərdiyi doldurucu videoları gizlədin. Bütün partiya doldurucudursa, lent boş qalmasın deyə saxlanılır.
+Hide the fill-in videos TikTok sends to For You without picking them for you. When a whole batch is fill-in, only its first video stays so the feed doesn't run dry.	TikTok-un Sənin üçün lentinə sizin üçün seçmədən göndərdiyi doldurucu videoları gizlədin. Bütün partiya doldurucudursa, lent boş qalmasın deyə yalnız ilk videosu saxlanılır.
 Unpersonalized For You videos	Fərdiləşdirilməmiş Sənin üçün videoları
 Reviewed presets for TikTok %1$s	TikTok %1$s üçün yoxlanılmış hazır ayarlar
 No reviewed presets for TikTok %1$s yet	TikTok %1$s üçün hələ yoxlanmış hazır ayar yoxdur
@@ -2015,6 +2041,10 @@ Hide Check your sources warnings	Mənbələrini yoxla xəbərdarlıqlarını giz
 Hide the Check your sources banner TikTok puts across the top of some videos, and the prompt it shows when you share one.	TikTok-un bəzi videoların üst hissəsinə qoyduğu Mənbələrini yoxla bannerini və belə videonu paylaşanda göstərdiyi xəbərdarlığı gizlət.
 Keep offline videos until you delete them	Oflayn videoları siz silənə qədər saxlayın
 TikTok removes videos saved for offline viewing after a set time, sometimes only two days, watched or not. With this on they stay until you delete them in TikTok's Offline videos settings. TikTok can still clear watched ones when your phone is low on space.	TikTok oflayn izləmək üçün saxlanan videoları müəyyən vaxtdan sonra, bəzən cəmi iki gündən sonra, izlənsə də izlənməsə də silir. Bu açıq olduqda onlar TikTok-un Offline videos ayarlarında özünüz silənə qədər qalır. Telefonda yer azaldıqda TikTok izlənmişləri yenə də silə bilər.
+Delete watched offline videos	İzlənmiş oflayn videoları silin
+Each time TikTok starts, deletes the offline videos you've already watched, so the next download fills their places with new ones. A video counts as watched once it's been on screen.	TikTok hər dəfə açılanda artıq izlədiyiniz oflayn videoları silir ki, növbəti endirmə onların yerini yeniləri ilə doldursun. Video ekranda göründüyü anda izlənmiş sayılır.
+1 unwatched offline video left	1 izlənməmiş oflayn video qalıb
+%1$d unwatched offline videos left	%1$d izlənməmiş oflayn video qalıb
 Hide Thoughts on profiles	Profillərdə Thoughts-u gizlədin
 Hide the Thoughts bubble TikTok shows above a profile picture, and the prompt to share one on your own profile. Restart TikTok to apply this.	TikTok-un profil şəklinin üstündə göstərdiyi Thoughts balonunu və öz profilinizdə onu paylaşmaq təklifini gizlədin. Tətbiq etmək üçün TikTok-u yenidən başladın.
 Turn on Thoughts	Thoughts-u aktivləşdirin
@@ -2097,7 +2127,7 @@ Load more	Daha çox yükləyin
 TikTok's total: %1$s. Filtered accounts: %2$s.	TikTok-a görə cəmi: %1$s. Süzgəclənmiş hesablar: %2$s.
 Your account changed. Close this list and open it again.	Hesabınız dəyişdi. Bu siyahını bağlayıb yenidən açın.
 Loading cancelled. The list is incomplete.	Yükləmə ləğv edildi. Siyahı natamamdır.
-Loading page %1$s...	%1$s səhifəsi yüklənir...
+Loading page %1$s…	%1$s səhifəsi yüklənir…
 TikTok reports no more items in this list.	TikTok bu siyahıda başqa element olmadığını bildirir.
 More items are available.	Daha çox element var.
 Sign in to view this list	Bu siyahını görmək üçün daxil olun
@@ -2169,7 +2199,7 @@ Let the video reach the bottom of the screen on the main feed and show the tabs 
 LIVE chat auto-translate	LIVE söhbətinin avtomatik tərcüməsi
 
 The Translate comments button in a LIVE room also needs a Japanese SIM. Turn on Override SIM details in Adrmodtt settings > Region, set SIM country preset to Japan, NTT DOCOMO (44010), then restart TikTok.	LIVE otağındakı Translate comments düyməsi üçün Yapon SIM-i də lazımdır. Adrmodtt ayarları > Region bölməsində SIM məlumatlarını əvəzləyin seçimini aktiv edin, SIM ölkəsi üçün hazır ayar olaraq Japan, NTT DOCOMO (44010) seçin, sonra TikTok-u yenidən başladın.
-Comments only scroll on videos TikTok has turned them on for, so most videos stay the same.	Şərhlər yalnız TikTok-un bunu açdığı videoların üzərində sürüşür, buna görə videoların çoxu dəyişmir.
+Wide videos TikTok allows it on get an Add one-liner button under the video and a one-liner bar in full screen. Other videos stay the same.	TikTok-un icazə verdiyi geniş videolarda videonun altında birsətirlik şərh əlavə etmə düyməsi, tam ekranda isə onlar üçün panel görünür. Digər videolar dəyişmir.
 
 Pick videos to save from profile grids	Profil şəbəkələrindən saxlamaq üçün videolar seçin
 Puts a circle on each video in a profile, Liked or Favorites grid. Pick up to %1$s, then tap Save to save them one after another, with a count and Cancel.	Profil, Bəyənilənlər və ya Sevimlilər şəbəkəsindəki hər videonun üzərinə dairə qoyur. %1$s videoya qədər seçin, sonra Saxla düyməsinə toxunun: onlar sayğac və Ləğv edin ilə bir-bir saxlanılır.
@@ -2188,7 +2218,6 @@ Picked %1$s. Save, then tap Pick all for more.	%1$s seçildi. Saxlayın, sonra y
 All loaded items are picked or saved. Scroll for more.	Hamısı seçilib və ya saxlanılıb. Sürüşdürün.
 
 Record LIVEs you watch	Baxdığın LIVE-ları yaz
-Adds a Record button to LIVE rooms. A recording starts when you tap it and ends when you tap Stop or leave the room. Nothing before that is saved.	LIVE otaqlarına Yaz düyməsi əlavə edir. Yazı ona toxunanda başlayır, Dayandır düyməsinə toxunanda və ya otaqdan çıxanda bitir. Ondan əvvəlki heç nə saxlanmır.
 Record	Yaz
 Stop	Dayandır
 Stop recording this LIVE	Bu LIVE-ın yazısını dayandır
@@ -2239,7 +2268,7 @@ Hide the Add friends button at the top of your profile. The menu button stays wh
 Hide Balance in the profile menu	Profil menyusunda Balansı gizlədin
 Hide Balance from the menu your profile's top right button opens. Your coins and gifts stay as they are.	Profilinizin sağ yuxarıdakı düyməsinin açdığı menyudan Balansı gizlədin. Sikkələriniz və hədiyyələriniz olduğu kimi qalır.
 See-through status bar	Şəffaf status paneli
-Let the video reach the top of the screen on the main feed, with the clock and status icons over it. The tabs at the top stay where they are.	Videonun əsas lentdə ekranın yuxarısına qədər uzanmasına icazə verin, saat və status ikonları onun üzərində qalsın. Yuxarıdakı tablar yerində qalır.
+Let the video reach the top of the screen, with the clock and status icons over it. Works on the main feed and on videos you open from search, a profile or your Liked and Favorites. The tabs at the top stay where they are.	Videonun ekranın yuxarısına qədər uzanmasına icazə verin, saat və status ikonları onun üzərində qalsın. Əsas lentdə və axtarışdan, profildən və ya Bəyənilənlər və Sevimlilərdən açdığınız videolarda işləyir. Yuxarıdakı tablar yerində qalır.
 Floating bottom bar	Üzən alt panel
 Show the main feed's tabs on a rounded, see-through dark pill that floats over the video. Needs See-through bottom bar.	Əsas lentin tablarını videonun üzərində üzən yuvarlaq, şəffaf tünd kapsulun üstündə göstərin. Şəffaf alt panel açıq olmalıdır.
 Liquid glass look	Maye şüşə görünüşü
@@ -2356,7 +2385,7 @@ Expanded	Genişləndirilib
 Collapsed	Yığılıb
 This setting isn't available. Search for another setting.	Bu ayar əlçatan deyil. Başqa ayar axtarın.
 Hide the Adrmodtt row	Adrmodtt sətrini gizlət
-Take Adrmodtt out of TikTok's Settings and privacy. To open these settings, press and hold For You at the top of the feed, or Home if Long-press Home for Adrmodtt settings is on.	Adrmodtt-i TikTok-un Parametrlər və məxfilik siyahısından çıxarın. Bu ayarları açmaq üçün lentin yuxarısında Sənin üçün düyməsini basılı saxlayın, ya da Adrmodtt ayarları üçün Ana səhifəni uzun basın açıqdırsa, Ana səhifəni.
+Take Adrmodtt out of TikTok's Settings and privacy. To open these settings, press and hold For You at the top of the feed, or Home if Long-press Home for Adrmodtt settings is on. If neither press can open them, the row stays.	Adrmodtt-i TikTok-un Parametrlər və məxfilik siyahısından çıxarın. Bu ayarları açmaq üçün lentin yuxarısında Sənin üçün düyməsini basılı saxlayın, ya da Adrmodtt ayarları üçün Ana səhifəni uzun basın açıqdırsa, Ana səhifəni. Heç biri onları aça bilmirsə, sətir qalır.
 Open the search page	Axtarış səhifəsini aç
 Search didn't open. Restart TikTok and try again.	Axtarış açılmadı. TikTok-u yenidən başladıb yoxlayın.
 Fold the search into a button	Axtarışı düyməyə yığ
@@ -2520,7 +2549,7 @@ Stop tapping this LIVE	Bu LIVE-a toxunmanı dayandır
 Auto tap stopped	Avto toxunma dayandı
 Clean up your account	Hesabınızı təmizləyin
 Remove all reposts	Bütün yenidən paylaşmaları silin
-Deletes all reposts from your account sequentially.	Hesabınızdakı bütün yenidən paylaşmaları bir-bir silir.
+Removes every repost from your account one after another.	Hesabınızdakı bütün yenidən paylaşmaları bir-bir silir.
 Remove all likes	Bütün bəyənmələri silin
 Unlikes every video one after another.	Bütün videoların bəyənməsini bir-bir geri götürür.
 Clear Favorites	Favoritləri təmizləyin
@@ -2626,3 +2655,129 @@ Hides the button that turns the people you picked into a new group chat. Send se
 AMOLED dark mode	AMOLED qaranlıq rejim
 # context: Summary under the AMOLED dark mode switch
 Fills dark mode with the color picked while patching, pure black unless another was chosen. Turn it off for TikTok's own dark grays. Light mode doesn't change. Restart TikTok to see the change.	Qaranlıq rejimi patç zamanı seçilmiş rənglə doldurur, başqa rəng seçilməyibsə tam qara. TikTok-un öz tünd boz rəngləri üçün söndürün. İşıqlı rejim dəyişmir. Dəyişikliyi görmək üçün TikTok-u yenidən başladın.
+# context: Switch in Adrmodtt settings > App, under the startup message rows (#377)
+Check for Adrmodtt updates	Adrmodtt yeniləmələrini yoxla
+# context: Summary under the Check for Adrmodtt updates switch
+Once a day when TikTok opens, ask GitHub if a newer Adrmodtt is out and show a card when it is. The request carries your Adrmodtt version and nothing else.	Gündə bir dəfə TikTok açılanda GitHub-dan daha yeni Adrmodtt çıxıb-çıxmadığını soruşur və çıxıbsa kart göstərir. Sorğu yalnız Adrmodtt versiyanızı daşıyır.
+# context: Title of the card shown when a newer release is out; %1$s is its version, like v0.82.0
+Adrmodtt %1$s is out	Adrmodtt %1$s çıxıb
+# context: Text of that card; %1$s is the installed version. Morphe Manager is an app name
+You have %1$s. Update the patches in Morphe Manager, then patch TikTok again.	Sizdə %1$s var. Morphe Manager-də patçları yeniləyin, sonra TikTok-u yenidən patçlayın.
+# context: Button on that card that opens Morphe Manager
+Update	Yenilə
+# context: Button on that card that hides it for this release
+Dismiss	Rədd et
+# context: Last line of the update card when the release notes have more bullets than it lists; %1$s is how many
+%1$s more in the release notes	Buraxılış qeydlərində daha %1$s
+Adds a Record button to LIVE rooms. Tap it to start or stop recording. Leaving the room also stops a recording.	LIVE otaqlarına Yaz düyməsi əlavə edir. Yazmağa başlamaq və ya dayandırmaq üçün toxun. Otaqdan çıxanda da yazı dayanır.
+Automatically record LIVEs you enter	Daxil olduğun LIVE-ları avtomatik yaz
+Start recording a LIVE's stream when you enter the room. Stop won't restart it until you leave and enter again. Screen recordings still need a tap and Android's permission.	LIVE otağına daxil olanda yayımın videosunu yazmağa başlayır. Dayandırdıqdan sonra otaqdan çıxıb yenidən daxil olmayınca yazı başlamır. Ekran yazısı üçün yenə toxunmaq və Android icazəsi lazımdır.
+# context: Row title of the Feed screen switch that adds a drag handle and Top, Back and End buttons to long video grids
+Drag handle and jump buttons on grids	Şəbəkələrdə sürükləmə tutacağı və keçid düymələri
+# context: Row summary for that switch; Top, Back and End are the button labels, Liked is the profile tab
+On long profile, Liked and sound grids, scrolling brings up a handle you can drag through what's loaded, plus Top, Back and End buttons. Back returns to where you were.	Uzun profil, bəyənilən və səs şəbəkələrində sürüşdürərkən yüklənənlər arasında sürükləyə biləcəyiniz tutacaq, həmçinin Başa, Geri və Sona düymələri görünür. Geri olduğunuz yerə qaytarır.
+# context: Short button label on a long video grid, jumps to the first video
+Top	Başa
+# context: Short button label on a long video grid, jumps to the last video loaded
+End	Sona
+# context: Row title of the Feed tabs choice that picks which of TikTok's icon sets the bottom bar draws
+Bottom bar icons	Alt panel ikonları
+# context: Note under that choice
+TikTok tests more than one set of icons for the bottom bar. Pick one here, or leave it to TikTok.	TikTok alt panel üçün bir neçə ikon dəsti sınaqdan keçirir. Burada birini seçin və ya seçimi TikTok-a buraxın.
+# context: Choice value for the bottom bar's icons, one of TikTok's newer icon sets
+New style 1	Yeni üslub 1
+# context: Choice value for the bottom bar's icons, TikTok's other newer icon set
+New style 2	Yeni üslub 2
+# context: Row title of the Feed tabs choice that sets how tall the bottom bar is
+Bottom bar height	Alt panelin hündürlüyü
+# context: Note under that choice
+Videos and the other tabs make room for the bar at its new height. With the tab names hidden, the icons fit the shorter bars best.	Videolar və digər tablar panelin yeni hündürlüyünə görə yer açır. Tab adları gizlədiləndə ikonlar alçaq panellərə daha yaxşı sığır.
+# context: Choice value for the bottom bar's height, the lowest of the five
+Shorter	Çox alçaq
+# context: Choice value for the bottom bar's height, a little lower than TikTok's
+Short	Alçaq
+# context: Choice value for the bottom bar's height, a little higher than TikTok's
+Tall	Hündür
+# context: Choice value for the bottom bar's height, the highest of the five
+Taller	Çox hündür
+# context: Row title of the Feed tabs switch that adds Friends to the row of tabs along the top of the feed
+Friends in the top tabs	Yuxarı tablarda Dostlar
+# context: Summary under that switch; Friends and Following are TikTok's tab names
+Friends moves up to the tabs at the top of the feed, next to Following, and Discover takes its spot in the bottom bar, the way TikTok lays it out in some countries. Your region and your feed stay as they are.	Dostlar lentin yuxarısındakı tablara, İzlənilənlərin yanına keçir, Kəşf et isə alt paneldə onun yerini tutur, TikTok bəzi ölkələrdə belə düzür. Regionunuz və lentiniz olduğu kimi qalır.
+# context: Row title of the Inbox switch that lifts the app's cap on pinned chats
+Pin more chats	Daha çox söhbət sancaqla
+# context: Summary under that switch; 5 is the cap TikTok's app usually puts on pinned chats
+Lifts the app's limit on pinned chats in the Inbox, usually 5, so you can pin more.	Tətbiqin Gələnlər qutusunda sancaqlanmış söhbətlərə qoyduğu limiti, adətən 5, qaldırır ki, daha çoxunu sancaqlaya biləsiniz.
+# context: Row title of the Comments switch that hides voice comments
+Hide voice comments	Səsli şərhləri gizlədin
+# context: Summary under that switch
+Hide comments made of a voice recording instead of words.	Sözlərdən deyil, səs yazısından ibarət şərhləri gizlədin.
+# context: Row title of the switch, and the title of the chooser that opens after the Not interested button
+Also filter it	Bunu da filtrlə
+# context: Summary under that switch; Not interested is the overlay button's name
+After you tap Not interested, offer to skip the video's creator, sound or hashtags from now on.	Maraqlı deyil düyməsinə toxunduqdan sonra videonun yaradıcısını, səsini və ya heşteqlərini bundan sonra keçməyi təklif edir.
+# context: Chooser row; %1$s is the creator's @handle
+Videos from %1$s	%1$s videoları
+# context: Chooser row; %1$s is the sound's name
+Videos with the sound %1$s	%1$s səsi olan videolar
+# context: Chooser row; %1$s is a hashtag such as #cats
+Videos tagged %1$s	%1$s heşteqli videolar
+# context: Banner after a pick, with an Undo; %1$s is the creator's @handle
+Skipping videos from %1$s	%1$s videoları keçilir
+# context: Banner after a pick, with an Undo; %1$s is a hashtag
+Skipping videos tagged %1$s	%1$s heşteqli videolar keçilir
+# context: Toast when the list a chooser pick goes on already holds as much as it can
+That list is full	Bu siyahı doludur
+# context: Row title of the switch that adds a search to the Liked and Favorites tabs of a profile
+Search Liked and Favorites grids	Bəyənilənlər və Sevimlilər şəbəkələrində axtarın
+# context: Summary under that switch; Search is the button's own label
+Adds a Search button to the top of the Liked and Favorites grids. Type a word from a caption, a creator or a sound to see only the loaded videos that have it.	Bəyənilənlər və Sevimlilər şəbəkələrinin yuxarısına Axtarış düyməsi əlavə edir. Yalnız onu olan yüklənmiş videoları görmək üçün başlıqdan, yaradıcıdan və ya səsdən bir söz yazın.
+# context: Hint in the search box over a Liked or Favorites grid
+Caption, creator or sound	Başlıq, yaradıcı və ya səs
+# context: Row title of the switch that makes holding the Profile tab open TikTok's account switcher
+Long-press Profile to switch accounts	Hesabı dəyişmək üçün Profili uzun basın
+# context: Summary under that switch; Long-press Profile for Watch history is the row just above it
+Press and hold the Profile tab to pick one of your other accounts, where TikTok left that out. A tap on Profile works as before. While Long-press Profile for Watch history is on, it takes the press. Restart TikTok to apply this.	Digər hesablarınızdan birini seçmək üçün Profil nişanını basıb saxlayın, TikTok bunu çıxarıbsa. Profilə toxunmaq əvvəlki kimi işləyir. Baxış tarixçəsi üçün Profili uzun basın açıq olduqda həmin basmanı o götürür. Tətbiq etmək üçün TikTok-u yenidən başladın.
+# context: Row title of the Comments switch that cuts long comments short with a tap to read the rest
+Fold long comments	Uzun şərhləri qatla
+# context: Summary under that switch; more is the word at the end of a cut comment (its own row below)
+A long comment shows its first few lines and more. Tap more to read the rest right where it is.	Uzun şərhin ilk bir neçə sətri və daha çox görünür. Qalanını elə yerindəcə oxumaq üçün daha çox yazısına toxun.
+# context: Row title of the number under that switch; the row shows it followed by the count, as in Fold after 4 lines
+Fold after	Qatlama həddi
+# context: Summary under that number
+How many lines of a long comment show before more.	Uzun şərhin daha çox yazısından əvvəl neçə sətri görünür.
+# context: The count shown on that row for one line
+%1$s line	%1$s sətir
+# context: The count shown on that row for several lines
+%1$s lines	%1$s sətir
+# context: The tappable word at the end of a cut comment, after an ellipsis, that opens the rest of it
+… more	… daha çox
+# context: A setting and the title of the screen it puts over the For You feed
+Pause before the feed	Lentdən əvvəl fasilə
+Zero switches this off. The first time the feed opens after TikTok starts or comes back from the background, a countdown covers it for that many seconds before you can continue, or leave. Messages, profiles and search open without it.	Sıfır bunu söndürür. TikTok açılandan və ya arxa plandan qayıdandan sonra lent ilk dəfə açılanda, davam edə və ya çıxa bilməzdən əvvəl geri sayım onu bu qədər saniyə örtür. Mesajlar, profillər və axtarış onsuz açılır.
+# context: The button on that screen that opens the feed once the countdown ends
+Continue	Davam et
+# context: The button on that screen that sends TikTok to the background instead
+Leave TikTok	TikTok-dan çıx
+You can continue now.	İndi davam edə bilərsiniz.
+# context: A checklist in Feed filter of the tabs along the top of TikTok's search results (Top, Shop, LIVE, Places...)
+Hide search result tabs	Axtarış nəticəsi tablarını gizlədin
+Pick the tabs to remove from the top of the search results, such as Shop, LIVE or Places. The list holds the tabs TikTok has shown you, and Top always stays.	Axtarış nəticələrinin yuxarısından götürüləcək tabları seçin, məsələn Mağaza, LIVE və ya Məkanlar. Siyahıda TikTok-un sizə göstərdiyi tablar var və Top həmişə qalır.
+# context: Shown in that checklist before TikTok has served any search tabs on this phone
+No search tabs have been seen yet	Hələ heç bir axtarış tabı görünməyib
+Search for something once, then return here to choose its tabs.	Bir dəfə nəsə axtarın, sonra tablarını seçmək üçün bura qayıdın.
+Video download codec	Video endirmə kodeki
+HEVC first	Əvvəlcə HEVC
+H.264 only	Yalnız H.264
+At the same quality, Automatic saves H.264, which nearly every player opens. HEVC is often sharper, but some older players and TVs can't play it.	Eyni keyfiyyətdə Avtomatik H.264 ilə saxlayır, onu demək olar ki, hər pleyer açır. HEVC çox vaxt daha aydın olur, amma bəzi köhnə pleyerlər və televizorlar onu oxuya bilmir.
+Pick which stories to save	Hansı hekayələrin saxlanacağını seç
+When someone has more than one story, saving asks which ones to keep. The story you're watching is already checked.	Kiminsə birdən çox hekayəsi olanda saxlama hansılarını saxlamaq istədiyini soruşur. İzlədiyin hekayə artıq seçilib.
+Pick stories to save	Saxlanacaq hekayələri seç
+%1$s of %2$s stories are loaded. Watch further to load the rest.	%2$s hekayədən %1$s yükləndi. Qalanlarını yükləmək üçün izləməyə davam et.
+Story %1$s	Hekayə %1$s
+On screen	Ekranda
+Pick at least one story	Ən azı bir hekayə seç
+Shade behind the status bar	Status panelinin arxasında kölgə
+A soft dark fade behind the clock and status icons, so they stay easy to read over a bright video. Needs See-through status bar.	Saat və status ikonlarının arxasında yumşaq tünd keçid, parlaq videonun üzərində asan oxunsunlar deyə. Şəffaf status paneli tələb olunur.
+Glass Stories button on Following	İzlənilənlərdə şüşə Hekayələr düyməsi
+The Stories button at the top of the Following feed turns to glass with round ends. On Android 12 and up, the video behind it is blurred too.	İzlənilənlər lentinin yuxarısındakı Hekayələr düyməsi yumru kənarlı şüşəyə çevrilir. Android 12 və daha yeni versiyalarda arxasındakı video da bulanıqlaşır.

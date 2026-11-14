@@ -6,6 +6,9 @@ package app.morphe.extension.tiktok.feed;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -13,8 +16,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.Window;
+import android.view.WindowInsets;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -25,9 +31,13 @@ import app.morphe.extension.tiktok.settings.SettingsStatus;
 /**
  * The window and video halves of See-through status bar (#145). VideoOverlayHider collapses the
  * spacer TikTok keeps above each feed video for the bar, so the picture reaches the top edge; this
- * clears the bar's own color while the feed is in front, so the picture shows through it. Android
- * 15 and up draw every app's bar see through already and ignore the color, so there it's only the
- * spacer.
+ * clears the bar's own color while the feed or an opened video is in front, so the picture shows
+ * through it (opened videos since #407). Android 15 and up draw every app's bar see through already
+ * and ignore the color, so there it's only the spacer.
+ *
+ * <p>Shade behind the status bar (#407) lays a fade in the window's overlay, twice the bar's
+ * height, dark at the top and clear at the bottom, so the clock stays readable over a bright video.
+ * It's drawn over everything in the window, so it comes off the moment the bar isn't see through.
  *
  * <p>Nothing else about the window changes: no flags, no insets, no cutout mode. The color TikTok
  * last gave the bar is kept, and given back when the feed leaves the front, the switch goes off or
@@ -48,10 +58,20 @@ public final class SeeThroughStatusBar {
     static final float MAX_FILL_SCALE = 1.2f;
     /** Windows whose bar this cleared, with the color TikTok last gave it. */
     private static final Map<Window, Integer> CLEARED = new WeakHashMap<>();
+    /** Windows the status bar's fade lies over, with the fade. */
+    private static final Map<Window, Drawable> SHADES = new WeakHashMap<>();
+    /** The fade from the top edge down: half black, a quarter, then clear. */
+    private static final int[] SHADE_COLORS = {0x80000000, 0x40000000, 0x00000000};
     /** Video surfaces and players this grew, with the scale it wrote. */
     private static final Map<View, Float> FILLED = new WeakHashMap<>();
     /** Surfaces whose pivot this moved off their center, so it goes back with the scale. */
     private static final Set<View> PIVOTED = Collections.newSetFromMap(new WeakHashMap<>());
+    /** Players the last pass filled, with their cell's cover id, so the pre-draw pass fills them again. */
+    private static final Map<View, Integer> PLAYERS = new WeakHashMap<>();
+    /** The pre-draw pass's copy of {@link #PLAYERS}, kept so a frame allocates nothing. */
+    private static final List<View> REFILLING = new ArrayList<>();
+    /** How many scales {@link #grow} has written, so the pre-draw pass can tell whether it changed any. */
+    private static int scaleWrites;
 
     private SeeThroughStatusBar() {
     }
@@ -79,6 +99,63 @@ public final class SeeThroughStatusBar {
     }
 
     /**
+     * One layout pass of Shade behind the status bar (#407): while {@code wanted}, a dark fade lies
+     * over the top of the window, half black under the clock and clear at twice the bar's height,
+     * so the clock and icons stay readable over a bright video. It sits in the window's overlay,
+     * over the picture and TikTok's top row alike, and moves no view. A phone that picks dark or
+     * light icons from what's under them reads the fade too. Otherwise it comes off.
+     */
+    static void shade(Activity activity, boolean wanted) {
+        Window window = activity.getWindow();
+        if (window == null) return;
+        View decor = window.peekDecorView();
+        if (decor == null) return;
+        Drawable shade = SHADES.get(window);
+        if (!wanted) {
+            if (shade != null) {
+                decor.getOverlay().remove(shade);
+                SHADES.remove(window);
+            }
+            return;
+        }
+        if (shade == null) {
+            shade = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, SHADE_COLORS);
+            SHADES.put(window, shade);
+            decor.getOverlay().add(shade);
+        }
+        int width = decor.getWidth();
+        int height = 2 * statusBarHeight(decor);
+        Rect bounds = shade.getBounds();
+        if (bounds.left != 0 || bounds.top != 0 || bounds.right != width || bounds.bottom != height) {
+            shade.setBounds(0, 0, width, height);
+        }
+    }
+
+    /** The fade over {@code activity}'s window, or null while there's none. */
+    static Drawable shadeOf(Activity activity) {
+        Window window = activity.getWindow();
+        return window == null ? null : SHADES.get(window);
+    }
+
+    /**
+     * How tall the status bar over {@code decor} is: the window's top inset, or the platform's
+     * bar height before the window has any.
+     */
+    @SuppressWarnings("deprecation")
+    static int statusBarHeight(View decor) {
+        WindowInsets insets = decor.getRootWindowInsets();
+        int top = insets == null ? 0 : insets.getSystemWindowInsetTop();
+        if (top > 0) return top;
+        android.content.res.Resources resources = decor.getResources();
+        int id = resources.getIdentifier("status_bar_height", "dimen", "android");
+        if (id != 0) {
+            int height = resources.getDimensionPixelSize(id);
+            if (height > 0) return height;
+        }
+        return Math.round(24 * resources.getDisplayMetrics().density);
+    }
+
+    /**
      * One layout pass over a feed cell's player: while {@code wanted}, grows its video so a portrait
      * picture covers the player top to bottom; otherwise puts back the scale this wrote. Every pass
      * measures again, so a new video in a reused cell gets its own scale. A scale TikTok wrote
@@ -98,30 +175,74 @@ public final class SeeThroughStatusBar {
      * coverId}): a sibling of the player, or a sibling's child, the size of the cell with the still
      * fitted inside. It shows the still for a frame as a video leaves and while the next one loads,
      * and the still was never grown, so with the picture filled the bands came back for that frame
-     * on every swipe (#232). The cover takes the picture's scale, and goes back with it.
+     * on every swipe (#232). The cover takes the picture's scale, and goes back with it. It grows
+     * from the point that keeps its still on the grown picture ({@link #coverPivot}).
      */
     static void fill(View player, boolean wanted, int coverId) {
         if (!(player instanceof ViewGroup)) return;
         if (wanted && fitWins()) wanted = false;
+        if (wanted) PLAYERS.put(player, coverId);
+        else PLAYERS.remove(player);
         ViewGroup group = (ViewGroup) player;
+        ViewParent space = player.getParent();
         boolean surfaces = false;
         float scale = 1f;
+        float middle = Float.NaN;
         for (int i = 0, count = group.getChildCount(); i < count; i++) {
             View surface = group.getChildAt(i);
             if (!(surface instanceof SurfaceView) && !(surface instanceof TextureView)) continue;
             surfaces = true;
             float grown = wanted ? fillScale(group.getHeight(), surface) : 1f;
-            scale = grow(surface, grown, fillPivot(surface, grown));
+            float pivot = fillPivot(surface, grown);
+            scale = grow(surface, grown, pivot);
+            middle = middle(surface, space, scale, pivot);
         }
-        ViewParent space = player.getParent();
         // A player this grew keeps getting a pass after a surface shows up in it, so it goes back.
         if (!surfaces || FILLED.containsKey(player)) {
             boolean grows = wanted && !surfaces && space instanceof View;
             float own = grow(player, grows ? fillScale(((View) space).getHeight(), player, true) : 1f);
-            if (!surfaces) scale = own;
+            if (!surfaces) {
+                scale = own;
+                middle = middle(player, space, own, Float.NaN);
+            }
         }
         View cover = cover(space, coverId);
-        if (cover != null) grow(cover, scale);
+        if (cover != null) grow(cover, scale, coverPivot(cover, space, scale, middle));
+    }
+
+    /**
+     * Where the cover grows from so the still fitted in its middle lands on the grown picture,
+     * whose middle sits at {@code middle} in {@code space}, or NaN for its center. A surface TikTok
+     * lifted grows from {@link #fillPivot}, which brings its middle down to the space's, so a cover
+     * TikTok left in place keeps its center, and one TikTok lifted with the surface grows from
+     * higher up instead of leaving its still 70 px off the picture with the band under it.
+     */
+    private static float coverPivot(View cover, ViewParent space, float scale, float middle) {
+        int height = cover.getHeight();
+        if (scale <= 1f || Float.isNaN(middle) || height <= 0) return Float.NaN;
+        float half = height / 2f;
+        float pivot = (offset(cover, space) + scale * half - middle) / (scale - 1f);
+        if (!(pivot >= 0f && pivot <= height) || Math.abs(pivot - half) <= 1f) return Float.NaN;
+        return pivot;
+    }
+
+    /** Where the middle of {@code picture}, grown by {@code scale} from {@code pivotY} (NaN for its center), sits in {@code space}. */
+    private static float middle(View picture, ViewParent space, float scale, float pivotY) {
+        float half = picture.getHeight() / 2f;
+        float pivot = Float.isNaN(pivotY) || scale == 1f ? half : pivotY;
+        return offset(picture, space) + pivot + scale * (half - pivot);
+    }
+
+    /** How far down {@code space} the top of {@code view}, somewhere inside it, sits, or NaN when it isn't inside. */
+    private static float offset(View view, ViewParent space) {
+        float top = 0f;
+        for (View at = view; at != space; ) {
+            top += at.getTop() + at.getTranslationY();
+            ViewParent parent = at.getParent();
+            if (!(parent instanceof View)) return Float.NaN;
+            at = (View) parent;
+        }
+        return top;
     }
 
     /** The cell's cover still beside {@code player}: a sibling, or a sibling's child, with {@code coverId}. */
@@ -154,12 +275,14 @@ public final class SeeThroughStatusBar {
     /**
      * Writes {@code scale} on {@code view} unless TikTok has written a scale of its own there, and
      * answers the scale this now holds on it, 1 when none. It grows from {@code pivotY}, or from
-     * the center when that's NaN, and a pivot this wrote goes back with the scale.
+     * the center when that's NaN, and a pivot this wrote goes back with the scale. A 1 written over
+     * this one's scale is TikTok putting the view back, not a zoom of its own (#390).
      */
     private static float grow(View view, float scale, float pivotY) {
         Float ours = FILLED.get(view);
         float current = view.getScaleY();
-        if (current != (ours == null ? 1f : ours) || view.getScaleX() != current) {
+        boolean reset = ours != null && current == 1f && view.getScaleX() == 1f;
+        if (!reset && (current != (ours == null ? 1f : ours) || view.getScaleX() != current)) {
             FILLED.remove(view);
             pivot(view, Float.NaN);
             return 1f;
@@ -167,6 +290,7 @@ public final class SeeThroughStatusBar {
         if (scale != current) {
             view.setScaleX(scale);
             view.setScaleY(scale);
+            scaleWrites++;
         }
         pivot(view, scale == 1f ? Float.NaN : pivotY);
         if (scale == 1f) FILLED.remove(view);
@@ -247,5 +371,28 @@ public final class SeeThroughStatusBar {
     /** Whether a surface still carries a scale this wrote, so the pass runs to put it back. */
     static boolean anyFilled() {
         return !FILLED.isEmpty();
+    }
+
+    /**
+     * The pre-draw pass: every player the last pass filled is filled again for the size it has
+     * now, before the frame is drawn. As a video starts TikTok writes 1 on the picture's scale,
+     * and can lay the player out short for one pass and back to full height with nothing after
+     * it, so the picture was drawn at TikTok's size, or grown for the short player and 6% small,
+     * for a few frames after a swipe and then grew (#390). Neither reaches the layout pass in
+     * time. A scale TikTok set itself is still left alone, the values are compared first so a
+     * frame with nothing changed writes nothing, and a pass that turned the fill off takes the
+     * player out. Answers how many scales it wrote.
+     */
+    static int refill() {
+        if (PLAYERS.isEmpty()) return 0;
+        int before = scaleWrites;
+        REFILLING.addAll(PLAYERS.keySet());
+        for (int i = 0, count = REFILLING.size(); i < count; i++) {
+            View player = REFILLING.get(i);
+            Integer coverId = player == null ? null : PLAYERS.get(player);
+            if (coverId != null && player.isAttachedToWindow()) fill(player, true, coverId);
+        }
+        REFILLING.clear();
+        return scaleWrites - before;
     }
 }

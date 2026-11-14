@@ -6,6 +6,8 @@
  */
 package app.morphe.patches.tiktok.interaction.downloads
 
+import app.morphe.patcher.patch.classDefByOrNull
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
 import app.morphe.util.addInstruction
@@ -366,7 +368,7 @@ val advancedDownloadsPatch = bytecodePatch(
                 )
             }
 
-        resolveStoryLongPressTimer().interceptStoryLongPress()
+        holdStoryReleaseForPicker(resolveStoryLongPressTimer().interceptStoryLongPress())
         hookStoryShareSave()
         addOwnedShareAction(SHARE_SAVE_COVER)
         // The grid cell holder's bind, which the count hook above already found, for picking

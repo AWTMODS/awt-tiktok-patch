@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.tiktok.blockauthor.FeedVisibility;
+import app.morphe.extension.tiktok.interaction.Haptics;
 import app.morphe.extension.tiktok.settings.Settings;
 import app.morphe.extension.tiktok.settings.preference.LocalWatchHistoryPreference;
 
@@ -70,7 +71,7 @@ public final class ProfileTabWatchHistory {
         try {
             // Still on a tab after the switches went off (see takeOff): the release is a tap again.
             if (!wanted()) return false;
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            Haptics.performHapticFeedback(view, HapticFeedbackConstants.LONG_PRESS);
             open(view.getContext());
         } catch (Throwable error) {
             Logger.printException(() -> "Could not open Watch history from the Profile tab", error);
@@ -126,6 +127,20 @@ public final class ProfileTabWatchHistory {
             Logger.printException(() -> "Could not open Watch history from TikTok's Profile hold", error);
             return false;
         }
+    }
+
+    /**
+     * Injection point: TikTok's read of its switch_account_gesture experiment. The bottom bar asks
+     * it before putting TikTok's hold on the Profile tab, the main page before setting up the
+     * hold's handler, and the handler again before it shows the account sheet. Some accounts get
+     * no, so holding Profile does nothing there; Long-press Profile to switch accounts answers yes
+     * (#388). Watch history still asks first in the handler, so that switch keeps the press.
+     *
+     * @param sent TikTok's own answer
+     */
+    @SuppressWarnings("unused")
+    public static boolean switcherGesture(boolean sent) {
+        return sent || Settings.PROFILE_TAB_SWITCHES_ACCOUNTS.get();
     }
 
     /** Called on each layout pass of the main activity in front. */

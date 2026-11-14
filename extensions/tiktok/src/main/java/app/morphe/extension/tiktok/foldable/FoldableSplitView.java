@@ -8,7 +8,10 @@ package app.morphe.extension.tiktok.foldable;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.graphics.Insets;
 import android.os.Build;
+import android.view.WindowInsets;
+import android.view.WindowMetrics;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.HookStatus;
@@ -25,9 +28,10 @@ public final class FoldableSplitView {
      * current with the switch on. TikTok builds the containers once, when the feed attaches, and
      * its feed activity takes size changes itself, so they stay whatever the window does next.
      *
-     * <p>The live check, container check and rebuild comparison use the same available width.
-     * {@link Configuration#screenWidthDp} takes precedence over window metrics, which may
-     * include system bars below API 35. An unavailable width is not a narrow build or a crossing.
+     * <p>The live check, container check and rebuild comparison use the same available width:
+     * a configuration TikTok hands over, else the window's own bounds without the bars and
+     * cutout a configuration's width leaves out, else the activity's configuration. An
+     * unavailable width is not a narrow build or a crossing.
      */
     private static final Map<Activity, Built> BUILT_FOR = new WeakHashMap<>();
 
@@ -65,7 +69,7 @@ public final class FoldableSplitView {
         if (activity == null) activity = Utils.getActivity();
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return false;
         try {
-            if (Build.VERSION.SDK_INT >= 24 && (activity.isInMultiWindowMode() || activity.isInPictureInPictureMode())) return false;
+            if (besideOtherApps(activity)) return false;
             if (width <= 0) width = widthDp(activity, null);
             return width >= threshold();
         } catch (RuntimeException error) {
@@ -78,22 +82,78 @@ public final class FoldableSplitView {
         return Math.max(320, Math.min(1600, Settings.FOLDABLE_SPLIT_VIEW_MIN_WIDTH_DP.get()));
     }
 
+    /**
+     * Split screen and picture in picture, where TikTok shares the screen and keeps its own
+     * layout. A desktop window (a Googlebook or Chromebook, DeX, Android's desktop windowing) is
+     * in multi-window mode too, but it's a window of its own that the user sizes, so its width
+     * decides like a full screen's. Left out with the rest, the comments there always opened over
+     * the video, whatever the width or the threshold (#405).
+     */
     private static boolean besideOtherApps(Activity activity) {
-        return Build.VERSION.SDK_INT >= 24 && (activity.isInMultiWindowMode() || activity.isInPictureInPictureMode());
+        if (Build.VERSION.SDK_INT < 24) return false;
+        if (activity.isInPictureInPictureMode()) return true;
+        return activity.isInMultiWindowMode() && !desktopWindow(activity);
     }
 
-    /** Supplied width, current configuration, then current bounds when both widths are undefined. */
-    private static int widthDp(Activity activity, Configuration configuration) {
+    private static boolean desktopWindow(Activity activity) {
         try {
-            int width = configuration == null ? 0 : configuration.screenWidthDp;
-            if (width <= 0) width = activity.getResources().getConfiguration().screenWidthDp;
-            if (width <= 0 && Build.VERSION.SDK_INT >= 30) {
-                float density = activity.getResources().getDisplayMetrics().density;
-                if (density > 0) width = Math.round(activity.getWindowManager().getCurrentWindowMetrics().getBounds().width() / density);
-            }
-            return width;
+            return isDesktopWindow(activity.getResources().getConfiguration());
+        } catch (RuntimeException error) {
+            Logger.printException(() -> "Could not read the window mode", error);
+            return false;
+        }
+    }
+
+    /**
+     * Whether a configuration is a freeform window's. Android names the window mode only in the
+     * configuration's text (API 28 on), as {@code mWindowingMode=freeform}; the display's own
+     * mode sits beside it as {@code mDisplayWindowingMode}, which a full-screen app on a desktop
+     * display shares, so only the window's counts.
+     */
+    static boolean isDesktopWindow(Configuration configuration) {
+        if (configuration == null || Build.VERSION.SDK_INT < 28) return false;
+        return configuration.toString().contains(" mWindowingMode=freeform");
+    }
+
+    /**
+     * Supplied width, the window's bounds, then the activity's configuration. TikTok keeps the
+     * screen width its process started with in the configuration its activities report (#398),
+     * so after the feed was built again for a wider window the new activity still said the old
+     * width, the container check said no, and comments opened over the video. A configuration
+     * handed over with a change is the new one, so it still comes first.
+     */
+    private static int widthDp(Activity activity, Configuration configuration) {
+        int width = configuration == null ? 0 : configuration.screenWidthDp;
+        if (width <= 0) width = windowWidthDp(activity);
+        if (width > 0) return width;
+        try {
+            return activity.getResources().getConfiguration().screenWidthDp;
         } catch (RuntimeException error) {
             Logger.printException(() -> "Could not determine the comment panel width", error);
+            return 0;
+        }
+    }
+
+    /**
+     * The window's width in dp, or 0 below API 30 or when it can't be read. A configuration's
+     * width leaves out the system bars and cutout below API 35 and for apps targeting less, so
+     * they come off here too and the build record and later changes compare the same thing.
+     */
+    private static int windowWidthDp(Activity activity) {
+        if (Build.VERSION.SDK_INT < 30) return 0;
+        try {
+            WindowMetrics metrics = activity.getWindowManager().getCurrentWindowMetrics();
+            int width = metrics.getBounds().width();
+            if (Build.VERSION.SDK_INT < 35 || activity.getApplicationInfo().targetSdkVersion < 35) {
+                Insets bars = metrics.getWindowInsets().getInsetsIgnoringVisibility(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                width -= bars.left + bars.right;
+            }
+            float density = Build.VERSION.SDK_INT >= 34 ? metrics.getDensity()
+                    : activity.getResources().getDisplayMetrics().density;
+            return density > 0 && width > 0 ? Math.round(width / density) : 0;
+        } catch (RuntimeException error) {
+            Logger.printException(() -> "Could not read the window width", error);
             return 0;
         }
     }

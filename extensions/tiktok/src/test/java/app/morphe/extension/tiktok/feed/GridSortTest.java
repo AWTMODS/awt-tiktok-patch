@@ -355,6 +355,12 @@ public class GridSortTest {
     private static void assertHeld(GridAdapter adapter) {
         assertEquals("out of sight", 0f, adapter.mmRecyclerView.getAlpha(), 0f);
         assertTrue("a cell nobody can see can't be tapped", holdOn(adapter).isClickable());
+        assertEquals("from the grid's top", 0, ((FrameLayout.LayoutParams) holdOn(adapter).getLayoutParams()).topMargin);
+    }
+
+    private static TextView holdCount(GridAdapter adapter) {
+        ViewGroup box = (ViewGroup) ((ViewGroup) holdOn(adapter)).getChildAt(0);
+        return (TextView) box.getChildAt(1);
     }
 
     private static void assertInSight(GridAdapter adapter) {
@@ -370,18 +376,51 @@ public class GridSortTest {
             List<Aweme> model = posts(30);
             adapter.mmItems = GridSort.data(adapter, model);
             assertHeld(adapter);
+            assertEquals("30", holdCount(adapter).getText().toString());
+            assertEquals("a screen reader hears a number and not what it counts",
+                    "30 videos", String.valueOf(holdCount(adapter).getContentDescription()));
 
             idle(GridSort.NEXT_PAGE_DELAY_MS + 100);
             model.addAll(0, posts(30));
             adapter.mmItems = GridSort.page(adapter, model);
             idle(GridSort.NEXT_PAGE_DELAY_MS + 100);
             assertHeld(adapter);
+            assertEquals("60", holdCount(adapter).getText().toString());
+            assertEquals("60 videos", String.valueOf(holdCount(adapter).getContentDescription()));
             assertEquals("no refresh while it's out of sight", 0, adapter.refreshes);
+            TextView count = holdCount(adapter);
+            count.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            assertEquals("right to left, the gap still faces the spinner",
+                    SettingsUi.dp(count.getContext(), 8), count.getPaddingRight());
+            assertEquals(0, count.getPaddingLeft());
 
             adapter.mmItems = GridSort.page(adapter, model);
             idle(0);
             assertInSight(adapter);
             assertEquals("one refresh as it comes back", 1, adapter.refreshes);
+        }
+    }
+
+    /** A mouse wheel over the hold leaves the grid behind it where it is until the hold ends. */
+    @Test public void aWheelOverTheHoldLeavesTheGridAlone() {
+        try (var controller = Robolectric.buildActivity(Activity.class).setup()) {
+            GridAdapter adapter = gridOnScreen(controller.get());
+            View frame = (View) adapter.mmRecyclerView.getParent();
+            int[] turns = app.morphe.extension.tiktok.Wheel.count(adapter.mmRecyclerView);
+            Settings.PROFILE_GRID_SORT.save("newest");
+            List<Aweme> model = posts(30);
+            adapter.mmItems = GridSort.data(adapter, model);
+            idle(0);
+            assertHeld(adapter);
+            assertTrue("nothing took the wheel", app.morphe.extension.tiktok.Wheel.turn(frame));
+            assertEquals("a wheel over the hold scrolled the grid", 0, turns[0]);
+
+            idle(GridSort.NEXT_PAGE_DELAY_MS + 100);
+            adapter.mmItems = GridSort.page(adapter, model);
+            idle(0);
+            assertInSight(adapter);
+            assertTrue(app.morphe.extension.tiktok.Wheel.turn(frame));
+            assertEquals("the fixture's wheel never reaches the grid", 1, turns[0]);
         }
     }
 
@@ -491,6 +530,26 @@ public class GridSortTest {
             FrameLayout hiddenFrame = (FrameLayout) hidden.mmRecyclerView.getParent();
             hidden.mmRecyclerView.setVisibility(View.GONE);
             assertFalse("a hidden grid's cover lets the first tap through", coverTakes(hiddenFrame));
+            idle(0);
+            assertEquals(1f, hidden.mmRecyclerView.getAlpha(), 0f);
+            assertNull(holdOn(hidden));
+        }
+    }
+
+    /** A wheel can be the first thing to reach the cover after its grid went, the way a tap can. */
+    @Test public void aHoldLetsGoOfAGridThatLeftOnAWheel() {
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            GridAdapter hidden = gridOnScreen(controller.get());
+            Settings.PROFILE_GRID_SORT.save("newest");
+            hidden.mmItems = GridSort.data(hidden, posts(30));
+            idle(0);
+            assertHeld(hidden);
+            FrameLayout frame = (FrameLayout) hidden.mmRecyclerView.getParent();
+            assertTrue("a cover in place takes the wheel", app.morphe.extension.tiktok.Wheel.turn(frame));
+
+            hidden.mmRecyclerView.setVisibility(View.GONE);
+            assertFalse("a hidden grid's cover lets the first wheel through",
+                    app.morphe.extension.tiktok.Wheel.turn(frame));
             idle(0);
             assertEquals(1f, hidden.mmRecyclerView.getAlpha(), 0f);
             assertNull(holdOn(hidden));
@@ -831,7 +890,10 @@ public class GridSortTest {
             assertEquals("native order includes pinned and missing-value posts", "abcdefp", ids(adapter.mmItems));
             assertSame("Original keeps the active control", originalControl, chip(adapter));
             assertEquals("Original order", String.valueOf(chip(adapter).getText()));
-            assertEquals("Sort this grid", String.valueOf(chip(adapter).getContentDescription()));
+            assertEquals("a screen reader hears the order the grid is in",
+                    "Sort this grid: Original order", String.valueOf(chip(adapter).getContentDescription()));
+            assertEquals("android.widget.Button",
+                    String.valueOf(chip(adapter).createAccessibilityNodeInfo().getClassName()));
             assertTrue(chip(adapter).isShown());
             GridSort.beforeOpen(fragment);
             for (int i = 0; i < identities.size(); i++) {

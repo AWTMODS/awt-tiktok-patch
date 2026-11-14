@@ -4,6 +4,10 @@
  */
 package app.morphe.patches.tiktok.misc.navigation
 
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.classDefByOrNull
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.packageMetadata
 import app.morphe.util.addInstruction
 import app.morphe.util.addInstructions
 import app.morphe.util.addInstructionsWithLabels
@@ -23,7 +27,11 @@ import app.morphe.patches.tiktok.misc.theme.declaredVersions
 import app.morphe.patches.tiktok.shared.callThroughLocals
 import app.morphe.patches.tiktok.shared.objectIn
 import app.morphe.patches.tiktok.shared.requireLocals
+import app.morphe.patches.tiktok.shared.valueIn
 import app.morphe.util.addInstructionsAtControlFlowLabel
+import app.morphe.util.classesCalling
+import app.morphe.util.classesCallingMethods
+import app.morphe.util.findMutableMethodOf
 import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -41,6 +49,7 @@ private const val FEED_LOCK_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/wel
 private const val START_PAGE_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/navigation/StartPage;"
 private const val FEED_BUTTONS_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/navigation/FeedButtons;"
 private const val PROFILE_TAB_WATCH_HISTORY_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/navigation/ProfileTabWatchHistory;"
+private const val BOTTOM_TAB_ICONS_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/navigation/BottomTabIcons;"
 private const val DISCOVER_TAB_CLASS_DESCRIPTOR = "Lapp/morphe/extension/tiktok/navigation/DiscoverTab;"
 
 /** A method reference the way smali writes it after the invoke's registers. */
@@ -64,6 +73,35 @@ private object TopTabLayoutConstructorFingerprint : app.morphe.patcher.Fingerpri
     returnType = "V",
     custom = { method, _ -> isTopTabLayoutConstructor(method) },
 )
+
+/**
+ * TikTok's Back on the start page's terms (#360). The tab Back starts on goes to the start page;
+ * on the tab the app opens on, the start page puts the app in the background and answers the
+ * guide check yes, so TikTok's handler ends there; from another tab, its "HOME" becomes that tab.
+ */
+internal fun MutableMethod.answerBackWithStartPage() {
+    val back = backPress()
+        ?: throw PatchException("Feed tab navigation: TikTok's Back no longer names its tab and switches to Home where it did.")
+    // Latest first, so the earlier indexes still point where they did.
+    addInstructions(
+        back.homeAt,
+        """
+            invoke-static/range {v${back.home} .. v${back.home}}, $START_PAGE_CLASS_DESCRIPTOR->backTab(Ljava/lang/String;)Ljava/lang/String;
+            move-result-object v${back.home}
+        """,
+    )
+    addInstructions(
+        back.handledAt,
+        """
+            invoke-static/range {v${back.handled} .. v${back.handled}}, $START_PAGE_CLASS_DESCRIPTOR->leaveOnBack(I)I
+            move-result v${back.handled}
+        """,
+    )
+    addInstruction(
+        back.namedAt,
+        "invoke-static/range {v${back.tag} .. v${back.tag}}, $START_PAGE_CLASS_DESCRIPTOR->backPressedOn(Ljava/lang/String;)V",
+    )
+}
 
 /** Each answer of the LIVE button's bottom tab check goes through [EXTENSION_CLASS_DESCRIPTOR] on its way out. */
 internal fun app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.answerLiveBottomTab() {
@@ -183,11 +221,47 @@ internal fun MutableMethod.offerDiscoverTab() {
         }
 }
 
+/** Every `return` of a boolean or int method passes through [target], which hands back the answer. */
+internal fun MutableMethod.answerThrough(target: String) {
+    val implementation = implementation
+        ?: throw PatchException("Feed tab navigation: $name has no implementation.")
+    implementation.instructions.withIndex()
+        .filter { (_, instruction) -> instruction.opcode == Opcode.RETURN }
+        .map { (index, instruction) -> index to (instruction as OneRegisterInstruction).registerA }
+        .asReversed()
+        .forEach { (index, register) ->
+            val call = callThroughLocals(
+                "Feed tab navigation",
+                "invoke-static",
+                target,
+                valueIn("v$register"),
+            )
+            addInstructionsAtControlFlowLabel(index, "$call\nmove-result v$register")
+        }
+}
+
+/** A picked icon set answers before TikTok reads its experiment; no pick leaves the read alone. */
+internal fun MutableMethod.offerBottomTabIcons() {
+    requireLocals("Feed tab navigation", 1)
+    addInstructionsWithLabels(
+        0,
+        """
+            invoke-static {}, $BOTTOM_TAB_ICONS_CLASS_DESCRIPTOR->version()I
+            move-result v0
+            if-ltz v0, :tiktok
+            invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+            move-result-object v0
+            return-object v0
+        """,
+        ExternalLabel("tiktok", getInstruction(0)),
+    )
+}
+
 @Suppress("unused")
 val feedTabNavigationPatch = bytecodePatch(
     name = "Feed tab navigation",
     description = "Lets you hide feed and bottom tabs you don't use, put Discover in the " +
-        "bottom bar, rename the bottom tabs, " +
+        "bottom bar and Friends in the top tabs, rename the bottom tabs, pick the bottom bar's icons and height, " +
         "choose the tab TikTok opens on, stop For You reloading when you tap Home and hold " +
         "Profile to open your Watch history. Starts off, " +
         "except holding Home to open Adrmodtt settings. Find it in Adrmodtt settings > Feed tabs.",
@@ -219,6 +293,18 @@ val feedTabNavigationPatch = bytecodePatch(
             if (packageMetadata.versionName in declaredVersions()) throw problem
             println("[Feed tab navigation] Left out the Discover tab on ${packageMetadata.versionName}: ${problem.message}")
             emptyList()
+        }
+        // The bottom bar's size, read in several places that all have to agree. Same rule as above.
+        val barHeightSites = try {
+            val sites = bottomBarHeightSites({ classDefByOrNull(it) }) { targets ->
+                val types = if (targets.all { "->" in it }) classesCallingMethods(targets) else classesCalling(targets)
+                types.mapNotNull { classDefByOrNull(it) }
+            }
+            sites to barCellConstructor(classDefBy(TabCountDotVisibilityFingerprint.method.definingClass))
+        } catch (problem: PatchException) {
+            if (packageMetadata.versionName in declaredVersions()) throw problem
+            println("[Feed tab navigation] Left out the bottom bar height on ${packageMetadata.versionName}: ${problem.message}")
+            null
         }
 
         SettingsStatusLoadFingerprint.method.addInstruction(
@@ -337,8 +423,47 @@ val feedTabNavigationPatch = bytecodePatch(
             )
         }
 
+        val iconVersion = if (packageMetadata.versionName in declaredVersions()) {
+            BottomTabIconVersionFingerprint.method
+        } else {
+            BottomTabIconVersionFingerprint.methodOrNull
+        }
+        iconVersion?.let { getter ->
+            getter.offerBottomTabIcons()
+            SettingsStatusLoadFingerprint.method.addInstruction(
+                0,
+                "invoke-static {}, Lapp/morphe/extension/tiktok/settings/SettingsStatus;->enableBottomTabIcons()V",
+            )
+        }
+
+        barHeightSites?.let { (sites, cellConstructor) ->
+            sites.hooksByMethod().forEach { (site, hooks) ->
+                mutableClassDefBy(site.first).findMutableMethodOf(site.second).addBottomBarHooks(hooks)
+            }
+            mutableClassDefBy(sites.navHeight.owner).findMutableMethodOf(sites.navHeight.method)
+                .adjustNavHeight(sites.navHeight)
+            // TikTok pins each tab's icon to its top and name to its bottom, which meet on a
+            // shorter bar unless both move in.
+            icon.methods.mutableCopyOf(cellConstructor).holdBarCellContent()
+            SettingsStatusLoadFingerprint.method.addInstruction(
+                0,
+                "invoke-static {}, Lapp/morphe/extension/tiktok/settings/SettingsStatus;->enableBottomBarHeight()V",
+            )
+        }
+
         if (typedAbGetters.isNotEmpty()) {
             typedAbGetters.forEach { it.offerDiscoverTab() }
+            // The layout only offers the tabs. Each Friends tab also asks a check of its own (#98).
+            val declared = packageMetadata.versionName in declaredVersions()
+            listOf(
+                FriendsOnTopFingerprint to "friendsOnTop(Z)Z",
+                FriendsTopIndexFingerprint to "friendsTopIndex(I)I",
+                FriendsBottomTabEnableFingerprint to "friendsInBottomBar(Z)Z",
+                SavedTabsFingerprint to "useSavedTabs(Z)Z",
+            ).forEach { (fingerprint, answer) ->
+                val method = if (declared) fingerprint.method else fingerprint.methodOrNull
+                method?.answerThrough("$DISCOVER_TAB_CLASS_DESCRIPTOR->$answer")
+            }
             SettingsStatusLoadFingerprint.method.addInstruction(
                 0,
                 "invoke-static {}, Lapp/morphe/extension/tiktok/settings/SettingsStatus;->enableDiscoverTab()V",
@@ -478,6 +603,11 @@ val feedTabNavigationPatch = bytecodePatch(
             )
         }
 
+        // Back from a bottom tab: TikTok sends it to For You, which a start page away from the
+        // feed is there to keep out of sight. It goes to the start tab instead, and leaves the app
+        // from there.
+        BackPressFingerprint.method.answerBackWithStartPage()
+
         // TikTok's feed button row (play and pause, previous, next) shows only while a screen reader
         // with touch exploration runs. Its check answers yes first when the switch is on.
         FeedButtonsGateFingerprint.method.apply {
@@ -524,5 +654,16 @@ val feedTabNavigationPatch = bytecodePatch(
                 ExternalLabel("switcher", getInstruction(0)),
             )
         } ?: println("[Feed tab navigation] Left holding Profile to TikTok's account switcher on ${packageMetadata.versionName}")
+
+        // Long-press Profile to switch accounts: TikTok's own switcher hold, wherever its
+        // experiment left the hold off (#388). The read answers yes, so the tab gets TikTok's
+        // listener and the handler above shows the sheet.
+        val gesture = if (packageMetadata.versionName in declaredVersions()) {
+            SwitchAccountGestureFingerprint.method
+        } else {
+            SwitchAccountGestureFingerprint.methodOrNull
+        }
+        gesture?.answerThrough("$PROFILE_TAB_WATCH_HISTORY_CLASS_DESCRIPTOR->switcherGesture(Z)Z")
+            ?: println("[Feed tab navigation] Left TikTok's Profile switcher hold to its experiment on ${packageMetadata.versionName}")
     }
 }

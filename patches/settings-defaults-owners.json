@@ -4,6 +4,7 @@
       "DOWNLOAD_BUTTON",
       "DOWNLOAD_BUTTON_POSITION",
       "DOWNLOAD_VIDEO_QUALITY",
+      "DOWNLOAD_VIDEO_CODEC",
       "DOWNLOAD_ASK_QUALITY",
       "DOWNLOAD_ORIGINAL_PHOTOS",
       "KEEP_PHOTOS_AS_SENT",
@@ -30,6 +31,7 @@
       "SAVE_PROFILE_PICTURE",
       "SAVE_STORY",
       "SAVE_STORY_FROM_SHARE",
+      "SAVE_STORY_PICK",
       "PICK_GRID_VIDEOS",
       "DOWNLOAD_VIDEO_PATH",
       "DOWNLOAD_PHOTO_PATH",
@@ -53,7 +55,9 @@
       "PROFILE_GRID_SORT",
       "LIKED_GRID_SORT",
       "SOUND_GRID_SORT",
-      "LIKED_JUMP_TO_DATE"
+      "LIKED_JUMP_TO_DATE",
+      "GRID_SEARCH",
+      "GRID_POSITION_CONTROLS"
     ],
     "Always upload in HD": [
       "ALWAYS_UPLOAD_HD"
@@ -74,6 +78,7 @@
     "Block author button": [
       "NO_RESUME_ON_FOREGROUND",
       "PAUSE_FIRST_VIDEO",
+      "PAUSE_BEFORE_FEED_SECONDS",
       "KEEP_PAUSED_ON_RETURN",
       "LEAVE_ON_REST_REMINDER",
       "IDLE_LEAVE_MINUTES",
@@ -132,7 +137,10 @@
       "COMMENT_EXPORT",
       "COMMENT_SEARCH_FOLDED",
       "COMMENT_LINKS",
+      "FOLD_LONG_COMMENTS",
+      "FOLD_LONG_COMMENTS_LINES",
       "HIDE_COMMENT_MEDIA",
+      "HIDE_VOICE_COMMENTS",
       "HIDE_SPAM_COMMENTS",
       "HIDE_COMMENT_POLLS",
       "HIDE_COMMENT_REPLY_PREVIEWS",
@@ -165,6 +173,7 @@
     "Custom offline videos limit": [
       "CUSTOM_OFFLINE_VIDEOS",
       "CUSTOM_OFFLINE_VIDEO_LIMIT",
+      "DELETE_WATCHED_OFFLINE_VIDEOS",
       "KEEP_OFFLINE_VIDEOS"
     ],
     "Device privacy guard": [
@@ -245,6 +254,7 @@
       "HIDE_LIVE",
       "HIDE_SHOP",
       "HIDE_SEARCH_SHOP",
+      "SEARCH_TAB_PICKS",
       "HIDE_STORY",
       "HIDE_IMAGE",
       "MIN_MAX_VIEWS",
@@ -290,6 +300,9 @@
       "BOTTOM_NAVIGATION_TABS",
       "BOTTOM_NAVIGATION_BLOCK_NEW_TABS",
       "DISCOVER_BOTTOM_TAB",
+      "FRIENDS_TOP_TAB",
+      "BOTTOM_TAB_ICON_STYLE",
+      "BOTTOM_BAR_HEIGHT",
       "HIDE_TAB_BADGES",
       "HIDE_BOTTOM_TAB_LABELS",
       "BOTTOM_TAB_NAME_HOME",
@@ -301,6 +314,7 @@
       "KEEP_FOR_YOU_ON_PULL_DOWN",
       "HOME_TAB_OPENS_SETTINGS",
       "PROFILE_TAB_OPENS_WATCH_HISTORY",
+      "PROFILE_TAB_SWITCHES_ACCOUNTS",
       "INBOX_TAB_FLIPS_READ_RECEIPTS",
       "SEARCH_INSTEAD_OF_HOME",
       "START_PAGE",
@@ -391,7 +405,8 @@
       "TURN_OFF_CHAT_DOUBLE_TAP",
       "TURN_OFF_CHAT_SWIPE_REPLY",
       "HIDE_INBOX_CUSTOM_TITLES",
-      "SHOW_INBOX_FILTERS"
+      "SHOW_INBOX_FILTERS",
+      "PIN_MORE_CHATS"
     ],
     "Hide inbox stories": [
       "HIDE_INBOX_STORIES"
@@ -401,6 +416,7 @@
       "HIDE_PROFILE_MENU_MINIS_ICONS",
       "HIDDEN_PROFILE_SHORTCUTS",
       "PROFILE_SHORTCUT_PICKS",
+      "PROFILE_TAB_PICKS",
       "HIDE_PROFILE_THOUGHTS",
       "ENABLE_THOUGHTS"
     ],
@@ -426,6 +442,7 @@
       "HIDE_FEED_SURVEYS",
       "HIDE_FOOTNOTES",
       "HIDE_FOLLOWING_LIVE_ROW",
+      "GLASS_STORIES_PILL",
       "HIDE_FOLLOWING_ALL_BUTTON",
       "HIDE_STORY_CREATE",
       "HIDE_REPOST_CHIP",
@@ -452,6 +469,7 @@
       "GLASS_HAPTICS",
       "GLASS_HAPTIC_STYLE",
       "SEE_THROUGH_STATUS_BAR",
+      "STATUS_BAR_SHADE",
       "BURN_IN_GUARD",
       "HIDE_SHARE_GUIDE",
       "HIDE_RAIL_FOLLOW",
@@ -530,6 +548,7 @@
       "KEEP_LIVE_CLEAR_SCREEN",
       "DARK_LIVE_PANELS",
       "RECORD_LIVE",
+      "AUTO_RECORD_LIVE",
       "LIVE_RECORD_QUALITY",
       "LIVE_RECORD_SOURCE",
       "LIVE_AUTO_TAP",
@@ -572,6 +591,7 @@
     ],
     "Not interested button": [
       "NOT_INTERESTED_BUTTON",
+      "NOT_INTERESTED_ALSO_FILTER",
       "NOT_INTERESTED_BUTTON_POSITION"
     ],
     "Keep unsent messages": [
@@ -669,7 +689,8 @@
       "STARTUP_MESSAGE",
       "STARTUP_MESSAGE_TITLE",
       "STARTUP_MESSAGE_TEXT",
-      "STARTUP_MESSAGE_DISMISSIBLE"
+      "STARTUP_MESSAGE_DISMISSIBLE",
+      "CHECK_FOR_UPDATES"
     ],
     "Share sheet tools": [
       "HIDE_SHARE_CHANNELS",
@@ -829,6 +850,7 @@
     "SHARE_ACTION_CATALOG": "Runtime state or legacy migration data; not a configurable feature default.",
     "PROFILE_SHORTCUT_CATALOG": "Runtime state or legacy migration data; not a configurable feature default.",
     "POPUP_LABEL_CATALOG": "Runtime state or legacy migration data; not a configurable feature default.",
+    "SEARCH_TAB_CATALOG": "Runtime state or legacy migration data; not a configurable feature default.",
     "DIAGNOSTIC_REPORT_SALT": "Runtime state or legacy migration data; not a configurable feature default.",
     "DEBUG_CAPTURE": "Runtime state or legacy migration data; not a configurable feature default.",
     "CHECK_ENVIRONMENT_WARNINGS_ISSUED": "Runtime state or legacy migration data; not a configurable feature default.",
@@ -836,6 +858,8 @@
     "EXPERIMENTAL_APP_CONFIRMED": "Runtime state or legacy migration data; not a configurable feature default.",
     "PAUSED": "Runtime state or legacy migration data; not a configurable feature default.",
     "SAFE_MODE": "Runtime state or legacy migration data; not a configurable feature default.",
-    "STARTUP_MESSAGE_HIDDEN": "Runtime state or legacy migration data; not a configurable feature default."
+    "STARTUP_MESSAGE_HIDDEN": "Runtime state or legacy migration data; not a configurable feature default.",
+    "UPDATE_CHECKED_AT": "Runtime state or legacy migration data; not a configurable feature default.",
+    "UPDATE_DISMISSED": "Runtime state or legacy migration data; not a configurable feature default."
   }
 }

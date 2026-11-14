@@ -82,7 +82,7 @@ public final class FeedItemsFilter {
     static final String AI_REASON = "AiGeneratedFilter";
     /** The For You batch's distribute sources, counted while the unpersonalized rule is on. */
     static final String FOR_YOU_DISTRIBUTION_SOURCE = "ForYouDistribution";
-    static final String KEPT_WHOLE_KIND = "batches kept whole";
+    static final String KEPT_ONE_KIND = "batches cut to one";
     /** Why a feed capture says a matched video stayed: it's the reader's own post. */
     private static final String OWN_POST = "own-post";
     /** Why a feed capture says a matched video stayed: the reader liked or saved it. */
@@ -149,6 +149,19 @@ public final class FeedItemsFilter {
     private static final Map<Integer, ProcessedListState> processedListCache = new HashMap<>();
     private static final Object filterCallProbeSummaryLock = new Object();
     private static ProbeSummary filterCallProbeSummary = new ProbeSummary(System.currentTimeMillis());
+    /**
+     * Two reads of one fresh list on two threads (a preload and FeedItemList.clone, say) could
+     * each filter it and each rewrite it in place. The second rewrite could then land while clone
+     * was still walking the list the first one left, which throws ConcurrentModificationException
+     * there (#400). One filter at a time per list: the later read finds the list already filtered
+     * and leaves it as it is. The write stays in place, since a swapped copy would miss whoever
+     * already holds the list. Striped by the list's identity so other lists don't wait, and never
+     * TikTok's own monitor.
+     */
+    private static final Object[] LIST_LOCKS = new Object[16];
+    static {
+        for (int stripe = 0; stripe < LIST_LOCKS.length; stripe++) LIST_LOCKS[stripe] = new Object();
+    }
 
     private FeedItemsFilter() {}
 
@@ -1411,6 +1424,20 @@ public final class FeedItemsFilter {
         FilterPhase phase
     ) {
         if (list == null) return;
+        synchronized (LIST_LOCKS[System.identityHashCode(list) & (LIST_LOCKS.length - 1)]) {
+            filterFeedListLocked(source, owner, list, extractor, verbose, allowRecentSkip, phase);
+        }
+    }
+
+    private static void filterFeedListLocked(
+        String source,
+        Object owner,
+        List list,
+        AwemeExtractor extractor,
+        boolean verbose,
+        boolean allowRecentSkip,
+        FilterPhase phase
+    ) {
         FeedFilterCounters.sawList(source, list.size());
 
         boolean forYou = phase == FilterPhase.RESPONSE && owner instanceof FeedItemList;
@@ -1546,25 +1573,24 @@ public final class FeedItemsFilter {
         }
 
         own.report();
-        // The unpersonalized rule is about what TikTok pads For You with, so a batch that is all
-        // padding stays whole rather than leave the feed nothing to move to. Its candidates
-        // passed every other rule, which is why they go back before the quality fallback.
+        // A batch that is all padding keeps its first video, so the feed has one to move to and
+        // TikTok asks for the next batch when the reader reaches it. It passed every other rule,
+        // which is why it goes back before the quality fallback.
         if (rangeKept.isEmpty() && !unpersonalized.isEmpty()) {
+            Object first = unpersonalized.get(0);
             if (capture != null) {
-                for (Object container : unpersonalized) {
-                    capture.putBack(extractor.extract(container), UNPERSONALIZED_REASON, "batch-all-fill-in");
-                }
+                capture.putBack(extractor.extract(first), UNPERSONALIZED_REASON, "batch-all-fill-in");
             }
-            rangeKept.addAll(unpersonalized);
-            contentRemoved -= unpersonalized.size();
-            int left = reasonCounts.get(UNPERSONALIZED_REASON) - unpersonalized.size();
+            rangeKept.add(first);
+            contentRemoved--;
+            int left = reasonCounts.get(UNPERSONALIZED_REASON) - 1;
             if (left > 0) reasonCounts.put(UNPERSONALIZED_REASON, left);
             else reasonCounts.remove(UNPERSONALIZED_REASON);
-            FeedFilterCounters.sawKind(FOR_YOU_DISTRIBUTION_SOURCE, KEPT_WHOLE_KIND);
-            int keptWhole = unpersonalized.size();
+            FeedFilterCounters.sawKind(FOR_YOU_DISTRIBUTION_SOURCE, KEPT_ONE_KIND);
+            int fillIn = unpersonalized.size();
             if (verbose) {
-                Logger.printInfo(() -> "[Morphe TikTok FeedFilter] " + source + " kept " + keptWhole
-                    + " unpersonalized For You videos, since hiding them would have left nothing");
+                Logger.printInfo(() -> "[Morphe TikTok FeedFilter] " + source + " kept 1 of " + fillIn
+                    + " unpersonalized For You videos, since hiding them all would have left nothing");
             }
         }
         if (countDistribution) {

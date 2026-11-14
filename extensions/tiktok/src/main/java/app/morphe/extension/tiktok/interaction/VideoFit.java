@@ -29,6 +29,7 @@ import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.settings.preference.LogBufferManager;
 import app.morphe.extension.tiktok.blockauthor.Reflect;
 import app.morphe.extension.tiktok.settings.Settings;
+import app.morphe.extension.tiktok.settings.SettingsStatus;
 
 /**
  * Puts the whole of a video on screen instead of cropping it to the window.
@@ -54,6 +55,15 @@ public final class VideoFit {
         if (Settings.FIT_VIDEO_TO_SCREEN.get()) return Mode.FIT;
         if (Settings.FILL_VIDEO_TO_SCREEN.get()) return Mode.FILL;
         return Mode.LEAVE_ALONE;
+    }
+
+    /**
+     * Whether the video is asked to cover the screen and the patch that does it is in. An opened
+     * video keeps a strip under its comment bar that the feed doesn't have, so the overlay pass
+     * gives that strip to the video too while this holds (#406).
+     */
+    public static boolean fillsScreen() {
+        return SettingsStatus.videoFitEnabled && mode() == Mode.FILL;
     }
 
     /** What the last decision on this thread settled: which result, the height for it and where it sits. */
@@ -449,11 +459,25 @@ public final class VideoFit {
         return value instanceof Integer ? (Integer) value : 0;
     }
 
-    /** Whether the video at this size needs changing: it overflows for fit, or leaves a gap for fill. */
+    /**
+     * Whether the video at this size needs changing: it overflows for fit, or leaves a gap for
+     * fill. Fill only takes a video standing the same way as the window. A wide video on a tall
+     * window covered it by losing three quarters of its width (#394), and a square one more than
+     * half; the switch is for the strip under a tall video, and the rest stay whole.
+     */
     static boolean wants(Mode mode, int width, int height, int containerWidth, int containerHeight) {
         if (mode == Mode.FIT) return width > containerWidth || height > containerHeight;
-        if (mode == Mode.FILL) return width < containerWidth || height < containerHeight;
+        if (mode == Mode.FILL) {
+            return sameWay(width, height, containerWidth, containerHeight)
+                    && (width < containerWidth || height < containerHeight);
+        }
         return false;
+    }
+
+    /** Both taller than wide, or both wider than tall. A square either way stands neither. */
+    static boolean sameWay(int width, int height, int containerWidth, int containerHeight) {
+        return (height > width && containerHeight > containerWidth)
+                || (width > height && containerWidth > containerHeight);
     }
 
     static int widthFor(Mode mode, int width, int height, int containerWidth, int containerHeight) {

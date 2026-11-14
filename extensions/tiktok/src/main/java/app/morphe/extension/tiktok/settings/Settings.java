@@ -13,6 +13,7 @@ import app.morphe.extension.shared.settings.BaseSettings;
 import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.FloatSetting;
 import app.morphe.extension.shared.settings.IntegerSetting;
+import app.morphe.extension.shared.settings.LongSetting;
 import app.morphe.extension.shared.settings.Setting;
 
 import app.morphe.extension.tiktok.offline.CustomOfflineVideosLimitPatch;
@@ -143,6 +144,8 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting PLAY_SDR = new BooleanSetting("play_sdr", FALSE);
     public static final BooleanSetting PREFER_H264 = new BooleanSetting("prefer_h264", FALSE);
     public static final StringSetting DOWNLOAD_VIDEO_QUALITY = new StringSetting("download_video_quality", "auto");
+    /** At the same height a save takes H.264 first ("auto"), HEVC first ("hevc") or H.264 alone ("h264"). */
+    public static final StringSetting DOWNLOAD_VIDEO_CODEC = new StringSetting("download_video_codec", "auto");
     /** Download lists the video's renditions and saves the one picked, for that save alone. */
     public static final BooleanSetting DOWNLOAD_ASK_QUALITY = new BooleanSetting("download_ask_quality", FALSE);
     public static final BooleanSetting DOWNLOAD_ORIGINAL_PHOTOS = new BooleanSetting("download_original_photos", FALSE);
@@ -211,6 +214,9 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting SAVE_PROFILE_PICTURE = new BooleanSetting("save_profile_picture", FALSE);
     public static final BooleanSetting SAVE_STORY = new BooleanSetting("save_story", FALSE);
     public static final BooleanSetting SAVE_STORY_FROM_SHARE = new BooleanSetting("save_story_from_share", FALSE);
+    /** A story save asks which of the person's stories to keep, with the one on screen checked (#393). */
+    public static final BooleanSetting SAVE_STORY_PICK = new BooleanSetting("save_story_pick", FALSE, false,
+            Setting.parentsAny(SAVE_STORY, SAVE_STORY_FROM_SHARE));
     /** A circle on each profile, Liked or Favorites grid cell, to pick posts and save them in one run (#27). */
     public static final BooleanSetting PICK_GRID_VIDEOS = new BooleanSetting("pick_grid_videos", FALSE);
     /**
@@ -366,8 +372,9 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting HIDE_LAUNCHER_SHORTCUTS =
             new BooleanSetting("hide_launcher_shortcuts", FALSE);
     /**
-     * Leaves the Adrmodtt row out of Settings and privacy (#264). Long pressing For You or Home
-     * still opens the page, and Pause brings the row back, since a paused setting reads stock.
+     * Leaves the Adrmodtt row out of Settings and privacy (#264), but only while a long press on
+     * For You or Home opens the page (#244). Pause brings the row back, since a paused setting
+     * reads stock.
      */
     public static final BooleanSetting HIDE_SETTINGS_ROW =
             new BooleanSetting("hide_settings_row", FALSE);
@@ -387,6 +394,17 @@ public class Settings extends BaseSettings {
      */
     public static final StringSetting STARTUP_MESSAGE_HIDDEN = new StringSetting(
             "startup_message_hidden", "", false, false);
+    /**
+     * Asks GitHub, once a day when TikTok opens, whether a newer Adrmodtt release is out, and shows
+     * a card when it is (#377). The only request Adrmodtt makes for itself, so it starts off.
+     */
+    public static final BooleanSetting CHECK_FOR_UPDATES = new BooleanSetting("check_for_updates", FALSE);
+    /** When the last update check went out, kept before it does. Not in backups. */
+    public static final LongSetting UPDATE_CHECKED_AT = new LongSetting(
+            "update_checked_at", 0L, false, false);
+    /** The release whose update card Dismiss was pressed on. Not in backups. */
+    public static final StringSetting UPDATE_DISMISSED = new StringSetting(
+            "update_dismissed", "", false, false);
     /**
      * On by default: the setup runs before anyone can reach this switch, so picking the patch is
      * the choice. Off brings the screens back the next time TikTok runs its setup.
@@ -574,6 +592,8 @@ public class Settings extends BaseSettings {
     );
     /** Discover in the Friends spot of the bottom bar; TikTok reads the layout once at launch. */
     public static final BooleanSetting DISCOVER_BOTTOM_TAB = new BooleanSetting("discover_bottom_tab", FALSE, true);
+    /** Friends in the row of tabs along the top of the feed; TikTok reads the layout once at launch. */
+    public static final BooleanSetting FRIENDS_TOP_TAB = new BooleanSetting("friends_top_tab", FALSE, true);
     /** The red count on Inbox and the dot on Profile, the pull that reopens the app. */
     public static final BooleanSetting HIDE_TAB_BADGES = new BooleanSetting("hide_tab_badges", FALSE, true);
     /** The names under the bottom tab icons, and a name of the user's own for each; empty keeps TikTok's. Read before each frame. */
@@ -583,6 +603,10 @@ public class Settings extends BaseSettings {
     public static final StringSetting BOTTOM_TAB_NAME_INBOX = new StringSetting("bottom_tab_name_inbox", "");
     public static final StringSetting BOTTOM_TAB_NAME_PROFILE = new StringSetting("bottom_tab_name_profile", "");
     public static final StringSetting BOTTOM_TAB_NAME_SHOP = new StringSetting("bottom_tab_name_shop", "");
+    /** Which of TikTok's bottom tab icon sets to draw (#285): tiktok, original, new_1 or new_2. TikTok reads it at launch. */
+    public static final StringSetting BOTTOM_TAB_ICON_STYLE = new StringSetting("bottom_tab_icon_style", "tiktok", true);
+    /** The bottom bar's height in dp (40, 44, 52 or 56), or tiktok for TikTok's 47. TikTok sizes the bar and the space above it once a launch. */
+    public static final StringSetting BOTTOM_BAR_HEIGHT = new StringSetting("bottom_bar_height", "tiktok", true);
     public static final BooleanSetting KEEP_FOR_YOU_ON_TAB_TAP = new BooleanSetting("keep_for_you_on_tab_tap", FALSE);
     public static final BooleanSetting KEEP_FOR_YOU_ON_PULL_DOWN = new BooleanSetting("keep_for_you_on_pull_down", FALSE);
     /** A long press on the Home tab opens Adrmodtt's settings (#45). TikTok gives that press nothing of its own. */
@@ -598,6 +622,12 @@ public class Settings extends BaseSettings {
      * accounts that press is TikTok's account switcher, which this takes over while it's on.
      */
     public static final BooleanSetting PROFILE_TAB_OPENS_WATCH_HISTORY = new BooleanSetting("profile_tab_opens_watch_history", FALSE);
+    /**
+     * Holding the Profile tab opens TikTok's account switcher on accounts where TikTok left that
+     * hold off (#388). TikTok's switch_account_gesture experiment answers yes, which is what puts
+     * the hold on the tab and lets its handler show the sheet. Read as the bottom bar is built.
+     */
+    public static final BooleanSetting PROFILE_TAB_SWITCHES_ACCOUNTS = new BooleanSetting("profile_tab_switches_accounts", FALSE, true);
     /** A long press on the Inbox tab flips Hide read receipts and toasts the new state (#333). */
     public static final BooleanSetting INBOX_TAB_FLIPS_READ_RECEIPTS = new BooleanSetting("inbox_tab_flips_read_receipts", FALSE);
     /** The tab TikTok opens on from its icon: tiktok (its own pick), for_you, following, friends, inbox or profile. */
@@ -682,6 +712,8 @@ public class Settings extends BaseSettings {
     ).withRange(CustomOfflineVideosLimitPatch.MIN_LIMIT, CustomOfflineVideosLimitPatch.MAX_LIMIT);
     /** Offline videos stay until you clear them, instead of expiring after TikTok's lifetime (#123). */
     public static final BooleanSetting KEEP_OFFLINE_VIDEOS = new BooleanSetting("keep_offline_videos", FALSE, true);
+    /** Watched offline videos are deleted at each start, so the next download replaces them. */
+    public static final BooleanSetting DELETE_WATCHED_OFFLINE_VIDEOS = new BooleanSetting("delete_watched_offline_videos", FALSE, true);
     public static final BooleanSetting SHOW_SEEKBAR = new BooleanSetting("show_seekbar", TRUE);
     /** The time played and the video's length at the end of the progress bar (#90). */
     public static final BooleanSetting SEEKBAR_TIME = new BooleanSetting("seekbar_time", FALSE);
@@ -778,6 +810,12 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting RECORD_LIVE = new BooleanSetting("record_live", FALSE);
     /**
+     * Starts a stream recording once per visit to a visible LIVE room. Off by default; never
+     * requests screen capture automatically. Read by the LIVE room watcher, so no restart.
+     */
+    public static final BooleanSetting AUTO_RECORD_LIVE = new BooleanSetting(
+            "auto_record_live", FALSE, false, Setting.parent(RECORD_LIVE));
+    /**
      * Which of a room's streams a LIVE recording takes (#203): "room" for the quality being
      * watched, "highest" or "lowest". Read as each recording starts, so no restart.
      */
@@ -832,6 +870,9 @@ public class Settings extends BaseSettings {
     public static final StringSetting SOUND_GRID_SORT = new StringSetting("sound_grid_sort", "off");
     /** A chip on Liked grids that starts the list at a chosen year or month (#350). */
     public static final BooleanSetting LIKED_JUMP_TO_DATE = new BooleanSetting("liked_jump_to_date", FALSE);
+    /** A chip on Liked and Favorites grids that narrows the loaded videos to a search. */
+    public static final BooleanSetting GRID_SEARCH = new BooleanSetting("grid_search", FALSE);
+    public static final BooleanSetting GRID_POSITION_CONTROLS = new BooleanSetting("grid_position_controls", FALSE);
     public static final BooleanSetting SHOW_EXACT_COUNTS = new BooleanSetting("show_exact_counts", FALSE);
     public static final BooleanSetting CLEAR_DISPLAY = new BooleanSetting("clear_display", FALSE);
     /** Clear display turned on by hand carries to the next video. Off, each video starts with its controls (#232). */
@@ -895,6 +936,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting PAUSE_FIRST_VIDEO = new BooleanSetting(
             "pause_first_video", FALSE, true);
+    /**
+     * Seconds of countdown in front of the first feed after TikTok starts or comes back from the
+     * background, or zero for none. Off by default. A shorter pause loosens the budget, so it
+     * waits for the next day the way the budget's own numbers do. See PausePlayback.
+     */
+    public static final IntegerSetting PAUSE_BEFORE_FEED_SECONDS = new IntegerSetting(
+            "pause_before_feed_seconds", 0).withRange(0, 60);
     /**
      * Keep a paused video paused. It reads the player in the pre-pause callback, which arrived in
      * Android 10, so older versions have nothing to read it by and the row is greyed there.
@@ -1019,6 +1067,8 @@ public class Settings extends BaseSettings {
 
     public static final BooleanSetting ENABLE_LONG_PRESS_SPEED_LOCK = new BooleanSetting("enable_long_press_speed_lock", FALSE, true);
     public static final BooleanSetting NOT_INTERESTED_BUTTON = new BooleanSetting("not_interested_button", FALSE);
+    /** After the Not interested button sends its feedback, offers the video's creator, sound and hashtags to the feed filter. */
+    public static final BooleanSetting NOT_INTERESTED_ALSO_FILTER = new BooleanSetting("not_interested_also_filter", FALSE);
     /**
      * Mute feed videos. Whether the feed is muted right now is the phone's state, like the volume,
      * so a backup doesn't carry it; paused, Adrmodtt plays the feed with sound as TikTok would.
@@ -1046,6 +1096,11 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting HIDE_FOOTNOTES = new BooleanSetting("hide_footnotes", FALSE);
     /** The LIVE and stories row across the top of the Following tab and its count pill (#262). */
     public static final BooleanSetting HIDE_FOLLOWING_LIVE_ROW = new BooleanSetting("hide_following_live_row", FALSE);
+    /**
+     * The Stories pill under the Following tab drawn as glass, with the video behind it blurred
+     * on Android 12 and newer, in place of TikTok's flat gray (#409). Read on each layout.
+     */
+    public static final BooleanSetting GLASS_STORIES_PILL = new BooleanSetting("glass_stories_pill", FALSE);
     /** The All button at the end of the Following tab's story row, which opens the following list (#308). */
     public static final BooleanSetting HIDE_FOLLOWING_ALL_BUTTON = new BooleanSetting("hide_following_all_button", FALSE, true);
     /** The Create circle at the start of the Following and Inbox story rows, while the viewer has no Story up (#309). */
@@ -1184,6 +1239,9 @@ public class Settings extends BaseSettings {
      * this goes off or Adrmodtt is paused. Read on each layout.
      */
     public static final BooleanSetting SEE_THROUGH_STATUS_BAR = new BooleanSetting("see_through_status_bar", FALSE);
+    /** A dark fade behind the clock while See-through status bar shows the video under it (#407). */
+    public static final BooleanSetting STATUS_BAR_SHADE = new BooleanSetting("status_bar_shade", FALSE, false,
+            Setting.parent(SEE_THROUGH_STATUS_BAR));
     /**
      * Burn-in guard for OLED screens (BurnInGuard): "dim" draws the controls the fade covers at a
      * quarter after a few seconds without a touch, "dim_shift" also moves the window's content a
@@ -1274,6 +1332,12 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting SHOW_INBOX_FILTERS =
             new BooleanSetting("show_inbox_filters", FALSE, true);
+    /**
+     * Lifts the app's cap on pinned chats in the Inbox, 5 unless TikTok's server says otherwise.
+     * TikTok reads the cap once per launch. See PinMoreChats.
+     */
+    public static final BooleanSetting PIN_MORE_CHATS =
+            new BooleanSetting("pin_more_chats", FALSE, true);
     public static final BooleanSetting EXPAND_ACTIVITY_LIST = new BooleanSetting("expand_activity_list", FALSE);
     /** Chat screen clutter. Each is off by default and read live when a chat opens. */
     public static final BooleanSetting HIDE_CHAT_CALL_BUTTONS =
@@ -1501,7 +1565,9 @@ public class Settings extends BaseSettings {
     public static final StringSetting CUSTOM_SHARE_DOMAIN = new StringSetting("custom_share_domain", "");
     // Opens a short vt/vm.tiktok.com share link once to swap the full link onto the clipboard.
     public static final BooleanSetting EXPAND_SHORT_SHARE_LINKS = new BooleanSetting("expand_short_share_links", FALSE);
-    public static final BooleanSetting HIDE_LIVE_ENTRANCE = new BooleanSetting("hide_live_entrance", FALSE);
+    // Going on it takes effect at once through the overlay hider; going off needs the toolbar to
+    // build the button again, which it only does as the feed's top bar is made.
+    public static final BooleanSetting HIDE_LIVE_ENTRANCE = new BooleanSetting("hide_live_entrance", FALSE, true);
     // The side menu button beside LIVE (#128). The toolbar asks once, as it builds the feed's
     // top bar, so a change needs a restart.
     public static final BooleanSetting HIDE_FEED_SIDEBAR_BUTTON =
@@ -1529,7 +1595,16 @@ public class Settings extends BaseSettings {
     /** Keeps the comment search box behind a button in the sheet's header until it's tapped (#254). */
     public static final BooleanSetting COMMENT_SEARCH_FOLDED = new BooleanSetting("comment_search_folded", FALSE);
     public static final BooleanSetting COMMENT_LINKS = new BooleanSetting("comment_links", FALSE);
+    /** Shows the first few lines of a long comment and a "more" that opens the rest in place. */
+    public static final BooleanSetting FOLD_LONG_COMMENTS = new BooleanSetting("fold_long_comments", FALSE);
+    public static final IntegerSetting FOLD_LONG_COMMENTS_LINES = new IntegerSetting(
+            "fold_long_comments_lines", 4, false, Setting.parent(FOLD_LONG_COMMENTS)).withRange(1, 20);
     public static final BooleanSetting HIDE_COMMENT_MEDIA = new BooleanSetting("hide_comment_media", FALSE);
+    /**
+     * Drops comments carrying a voice recording with something to play (a vid or a local file),
+     * whatever media type TikTok gives them, so a picture comment with a recording goes too.
+     */
+    public static final BooleanSetting HIDE_VOICE_COMMENTS = new BooleanSetting("hide_voice_comments", FALSE);
     /** Drops bot comments that point to a bio, a link or a messenger, or bait follows (#187). */
     public static final BooleanSetting HIDE_SPAM_COMMENTS = new BooleanSetting("hide_spam_comments", FALSE);
     public static final BooleanSetting HIDE_COMMENT_POLLS = new BooleanSetting("hide_comment_polls", FALSE);
@@ -1587,6 +1662,13 @@ public class Settings extends BaseSettings {
     public static final StringSetting HIDDEN_PROFILE_SHORTCUTS = new StringSetting("hidden_profile_shortcuts", "");
     public static final StringSetting PROFILE_SHORTCUT_PICKS = new StringSetting("profile_shortcut_picks", "");
     public static final StringSetting PROFILE_SHORTCUT_CATALOG = new StringSetting("profile_shortcut_catalog", "");
+    // Search result tabs: the keys picked to hide, and the tabs TikTok has served on this phone,
+    // which the checklist offers. The strip is read on every search, so no restart.
+    public static final StringSetting SEARCH_TAB_PICKS = new StringSetting("search_tab_picks", "");
+    public static final StringSetting SEARCH_TAB_CATALOG = new StringSetting("search_tab_catalog", "");
+    // Profile tabs: the checklist rows picked to hide (private, repost, favorite and the rest). Read
+    // whenever a profile lays out its tabs, so a profile opened after a change follows it.
+    public static final StringSetting PROFILE_TAB_PICKS = new StringSetting("profile_tab_picks", "");
     /** The Thoughts bubble above a profile picture (#122). Read when a profile's picture is built. */
     public static final BooleanSetting HIDE_PROFILE_THOUGHTS = new BooleanSetting("hide_profile_thoughts", FALSE, true);
     /** TikTok's two Thoughts gates answer yes (#186). A restart, since TikTok keeps what it built. */
@@ -1682,7 +1764,8 @@ public class Settings extends BaseSettings {
                 REMEMBERED_SPEED, SESSION_BUDGET_STATE, BLOCK_AUTHOR_BUTTON_POSITION,
                 LOCAL_HIDE_BUTTON_POSITION, BLOCK_SOUND_BUTTON_POSITION, NOT_INTERESTED_BUTTON_POSITION,
                 FEED_MUTE_BUTTON_POSITION, DOWNLOAD_BUTTON_POSITION, COMMENT_TRANSLATE_BUTTON_TURNED_ON,
-                SHARE_ACTION_CATALOG, PROFILE_SHORTCUT_CATALOG, POPUP_LABEL_CATALOG, DIAGNOSTIC_REPORT_SALT, AUTO_STREAK_STATE,
+                SHARE_ACTION_CATALOG, PROFILE_SHORTCUT_CATALOG, POPUP_LABEL_CATALOG, SEARCH_TAB_CATALOG,
+                DIAGNOSTIC_REPORT_SALT, AUTO_STREAK_STATE,
                 // The settings screen still searches while paused. Answering the empty default
                 // hid the recent searches, and the next search saved itself over all of them.
                 RECENT_SETTINGS_SEARCHES,

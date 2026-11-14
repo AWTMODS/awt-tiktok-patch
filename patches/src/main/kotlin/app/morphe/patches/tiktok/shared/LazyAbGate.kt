@@ -6,9 +6,11 @@
  */
 package app.morphe.patches.tiktok.shared
 
+import app.morphe.patcher.patch.classDefByOrNull
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
-import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.util.findMutableMethodOf
@@ -68,7 +70,7 @@ private val INTEGER_MOVES = setOf(Opcode.MOVE, Opcode.MOVE_FROM16, Opcode.MOVE_1
  * is called `invoke$n`, which would make this a one-line lookup and would be one more thing R8
  * chooses.
  */
-internal fun BytecodePatchContext.findLazyAbGate(
+internal fun findLazyAbGate(
     what: String,
     key: String,
     gate: (Method, ClassDef) -> Boolean,
@@ -111,7 +113,7 @@ internal fun BytecodePatchContext.findLazyAbGate(
     return search.find(what, key, gate, ::classDefForEach)
 }
 
-internal fun BytecodePatchContext.resolveLazyAbGate(
+internal fun resolveLazyAbGate(
     what: String,
     key: String,
     gate: (Method, ClassDef) -> Boolean,
@@ -317,15 +319,6 @@ internal fun Method.dispatchTarget(group: ClassDef, number: Int): Method? {
 }
 
 /**
- * Whether the method is one of these gates' getters: read the lazy value, unwrap the number it
- * holds, answer from it.
- *
- * <p>The key says which class; this says the method on it is the one that reads the setting
- * rather than some other member of the same signature. The read is matched by the name and
- * shape of `getValue` alone, because the interface it is called on is `kotlin.Lazy` under a name
- * R8 assigns per build; what pins it down is the unwrap of a `Number` straight after.
- */
-/**
  * Whether the method reads the lazy value itself, or through one static no-argument helper on
  * its own class that does. 46.9.3 splits the comment sort gate that way: `LIZ(Aweme)Z` asks
  * `LIZIZ()Z` on the same class and the read moved there with it, while the getter the patch
@@ -346,6 +339,15 @@ internal fun Method.readsLazyAb(owner: ClassDef): Boolean {
     }
 }
 
+/**
+ * Whether the method is one of these gates' getters: read the lazy value, unwrap the number it
+ * holds, answer from it.
+ *
+ * <p>The key says which class; this says the method on it is the one that reads the setting
+ * rather than some other member of the same signature. The read is matched by the name and
+ * shape of `getValue` alone, because the interface it is called on is `kotlin.Lazy` under a name
+ * R8 assigns per build; what pins it down is the unwrap of a `Number` straight after.
+ */
 internal fun Method.isLazyAbRead(): Boolean {
     val calls = implementation?.instructions
         ?.mapNotNull { it.getReference<MethodReference>() }

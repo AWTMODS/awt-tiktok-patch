@@ -1320,6 +1320,175 @@ public final class Probe extends Instrumentation {
                         Log.i(TAG, "ok profileviewgates" + out);
                         break;
                     }
+                    case "thoughtgates": {
+                        // What TikTok 47.7.3 answers for the redesigned Thoughts (#186), read in
+                        // this process: whether the SocialThought plugin is in (X.0CqY.LIZ), the
+                        // redesign gate (X.0IPJ.LIZ), its raw enable_thought_redesign_consumption
+                        // value (the lazy X.0IPJ.LIZIZ), and need_story_notes (X.0IPL.LIZIZ). That
+                        // value comes from an AB store the Feature Gate recorder does not hook.
+                        StringBuilder out = new StringBuilder();
+                        String[][] reads = {
+                                {"plugin", "X.0CqY", "LIZ"},
+                                {"redesignGate", "X.0IPJ", "LIZ"},
+                                {"needStoryNotes", "X.0IPL", "LIZIZ"},
+                        };
+                        for (String[] read : reads) {
+                            try {
+                                out.append(' ').append(read[0]).append('=')
+                                        .append(loader.loadClass(read[1]).getMethod(read[2]).invoke(null));
+                            } catch (Throwable failure) {
+                                out.append(' ').append(read[0]).append("=?(").append(failure.getClass().getSimpleName()).append(')');
+                            }
+                        }
+                        try {
+                            Field field = loader.loadClass("X.0IPJ").getDeclaredField("LIZIZ");
+                            field.setAccessible(true);
+                            Object lazy = field.get(null);
+                            out.append(" redesignValue=").append(lazy.getClass().getMethod("getValue").invoke(lazy));
+                        } catch (Throwable failure) {
+                            out.append(" redesignValue=?(").append(failure.getClass().getSimpleName()).append(')');
+                        }
+                        Log.i(TAG, "ok thoughtgates" + out);
+                        break;
+                    }
+                    case "commenttranslategates": {
+                        // Which comment translation manager TikTok 47.7.3 gives a comment row (#383).
+                        // BaseCommentCell swaps the observer-based X.0H92 for X.0sNJ when
+                        // X.0H8z.LIZ() holds: X.07oI.LIZ() (its lazy flag, unless X.07o6.LIZ()), or
+                        // comment_auto_translation_consumer_style (the lazy X.0H8z.LIZ) equal to 3
+                        // with X.07oM.LIZIZ().
+                        StringBuilder out = new StringBuilder();
+                        String[][] reads = {
+                                {"swapsManager", "X.0H8z", "LIZ"},
+                                {"autoTranslateGate", "X.07oI", "LIZ"},
+                                {"autoTranslateVeto", "X.07o6", "LIZ"},
+                                {"consumerStyleGate", "X.07oM", "LIZIZ"},
+                        };
+                        for (String[] read : reads) {
+                            try {
+                                out.append(' ').append(read[0]).append('=')
+                                        .append(loader.loadClass(read[1]).getMethod(read[2]).invoke(null));
+                            } catch (Throwable failure) {
+                                out.append(' ').append(read[0]).append("=?(").append(failure.getClass().getSimpleName()).append(')');
+                            }
+                        }
+                        String[][] lazies = {{"consumerStyle", "X.0H8z"}, {"autoTranslateFlag", "X.07oI"}};
+                        for (String[] lazy : lazies) {
+                            try {
+                                Field field = loader.loadClass(lazy[1]).getDeclaredField("LIZ");
+                                field.setAccessible(true);
+                                Object value = field.get(null);
+                                out.append(' ').append(lazy[0]).append('=').append(value.getClass().getMethod("getValue").invoke(value));
+                            } catch (Throwable failure) {
+                                out.append(' ').append(lazy[0]).append("=?(").append(failure.getClass().getSimpleName()).append(')');
+                            }
+                        }
+                        Log.i(TAG, "ok commenttranslategates" + out);
+                        break;
+                    }
+                    case "commentrows": {
+                        // Every comment row laid out in TikTok 47.7.3's comment lists (#383): the
+                        // class of the row's translation manager (BaseCommentCell.LLLFZ, an X.0H8V,
+                        // then its X.0H91 LJI), whether the row's comment is a picture with no text,
+                        // and for the observer manager X.0H92 whether the comment it listens for
+                        // (LLJJIJIL) is the one the row shows (O6). Ids are shown as short hashes.
+                        // The probe answers on the main thread, so the rows are read as laid out.
+                        StringBuilder out = new StringBuilder();
+                        int rows = 0;
+                        java.util.ArrayDeque<android.view.View> queue = new java.util.ArrayDeque<>(windowRoots());
+                        while (!queue.isEmpty()) {
+                            android.view.View view = queue.removeFirst();
+                            if (view instanceof android.view.ViewGroup) {
+                                android.view.ViewGroup group = (android.view.ViewGroup) view;
+                                Method holderOf = null;
+                                for (Class<?> type = view.getClass(); type != null && holderOf == null; type = type.getSuperclass()) {
+                                    if (type.getName().equals("androidx.recyclerview.widget.RecyclerView")) {
+                                        holderOf = type.getMethod("getChildViewHolder", android.view.View.class);
+                                    }
+                                }
+                                for (int i = 0; i < group.getChildCount(); i++) {
+                                    android.view.View child = group.getChildAt(i);
+                                    queue.add(child);
+                                    // A closed sheet's list can stay attached behind the feed, so only
+                                    // rows on the screen are read.
+                                    if (holderOf == null || !child.isShown()
+                                            || !child.getGlobalVisibleRect(new android.graphics.Rect())) continue;
+                                    Object cell = holderOf.invoke(view, child);
+                                    Class<?> base = cell == null ? null : cell.getClass();
+                                    while (base != null && !base.getName().endsWith(".BaseCommentCell")) base = base.getSuperclass();
+                                    if (base == null) continue;
+                                    rows++;
+                                    out.append("\n  ").append(cell.getClass().getSimpleName());
+                                    try {
+                                        Object shown = base.getMethod("O6").invoke(cell);
+                                        Object text = shown == null ? null : shown.getClass().getMethod("getText").invoke(shown);
+                                        Object images = shown == null ? null : shown.getClass().getMethod("getImageList").invoke(shown);
+                                        out.append(" shows=").append(shown == null ? "none" : "<id " + (String.valueOf(shown.getClass().getMethod("getCid").invoke(shown)).hashCode() & 0xffff) + ">")
+                                                .append(" picture=").append((text == null || text.toString().isEmpty()) && images instanceof java.util.List && !((java.util.List<?>) images).isEmpty());
+                                        Field stateField = base.getDeclaredField("LLLFZ");
+                                        stateField.setAccessible(true);
+                                        Object state = stateField.get(cell);
+                                        if (state == null) {
+                                            out.append(" state=null");
+                                            continue;
+                                        }
+                                        // onItemViewCreated only builds the X.0H92 when X.0H8V.LJII() is false;
+                                        // otherwise it wires X.0Hdb (LJIIIIZZ) and the X.0sNN translator.
+                                        for (String gate : new String[] {"LJII", "LJI"}) {
+                                            Method read = state.getClass().getDeclaredMethod(gate);
+                                            read.setAccessible(true);
+                                            out.append(' ').append(gate).append("()=").append(read.invoke(state));
+                                        }
+                                        for (String name : new String[] {"LJIIL", "LJIIIIZZ", "LJIIIZ"}) {
+                                            Field field = state.getClass().getDeclaredField(name);
+                                            field.setAccessible(true);
+                                            Object value = field.get(state);
+                                            out.append(' ').append(name).append('=').append(value == null ? "null" : value instanceof Boolean ? value : value.getClass().getName());
+                                        }
+                                        Field managerField = state.getClass().getDeclaredField("LJI");
+                                        managerField.setAccessible(true);
+                                        Object manager = managerField.get(state);
+                                        out.append(" manager=").append(manager == null ? "null" : manager.getClass().getName());
+                                        if (manager != null && manager.getClass().getName().equals("X.0H92")) {
+                                            Field heard = manager.getClass().getDeclaredField("LLJJIJIL");
+                                            heard.setAccessible(true);
+                                            Object comment = heard.get(manager);
+                                            String heardCid = comment == null ? null : String.valueOf(comment.getClass().getMethod("getCid").invoke(comment));
+                                            out.append(" hears=").append(heardCid == null ? "none" : "<id " + (heardCid.hashCode() & 0xffff) + ">");
+                                            if (heardCid != null) {
+                                                // Whether the manager is still among the observers of that
+                                                // comment's updates (X.0H93.LIZIZ(cid), a NextLiveData that
+                                                // keys nextObserverMap by the observer it was given).
+                                                Object updates = loader.loadClass("X.0H93").getMethod("LIZIZ", String.class).invoke(null, heardCid);
+                                                Field observers = null;
+                                                for (Class<?> type = updates.getClass(); type != null && observers == null; type = type.getSuperclass()) {
+                                                    try {
+                                                        observers = type.getDeclaredField("nextObserverMap");
+                                                    } catch (NoSuchFieldException ignored) {
+                                                    }
+                                                }
+                                                observers.setAccessible(true);
+                                                out.append(" listening=").append(((java.util.Map<?, ?>) observers.get(updates)).containsKey(manager));
+                                            }
+                                            // The writer and fade CommentBatchTranslator would stop when
+                                            // this row is reused, as manager field / writer class.fade field.
+                                            Method writerOf = loader.loadClass("app.morphe.extension.tiktok.translation.CommentBatchTranslator")
+                                                    .getDeclaredMethod("rowWriter", Object.class);
+                                            writerOf.setAccessible(true);
+                                            Field[] writer = (Field[]) writerOf.invoke(null, manager);
+                                            out.append(" writer=").append(writer.length == 2
+                                                    ? writer[0].getName() + "/" + writer[1].getDeclaringClass().getName() + "." + writer[1].getName()
+                                                    : "none");
+                                        }
+                                    } catch (Throwable failure) {
+                                        out.append(" ?(").append(failure.getClass().getSimpleName()).append(' ').append(failure.getMessage()).append(')');
+                                    }
+                                }
+                            }
+                        }
+                        Log.i(TAG, "ok commentrows " + rows + out);
+                        break;
+                    }
                     case "finddesc": {
                         // Shown views whose content description is exactly -e desc, with class and
                         // bounds; -e click true also performs a click on the first, the listener a
@@ -1487,6 +1656,20 @@ public final class Probe extends Instrumentation {
                                     android.os.SystemClock.uptimeMillis(), android.view.MotionEvent.ACTION_UP, x, y), holdMs);
                             clicked += " held=" + holdMs + "ms";
                         }
+                        // -e a11yfocus true: TalkBack's focus on the match's list row (the match
+                        // itself outside a list), so a walk can start one row above a setting deep
+                        // in a page and step onto it with TalkBack's own next-item key. Only works
+                        // while TalkBack is on; answers whether the row took it.
+                        if ("true".equals(intent.getStringExtra("a11yfocus"))) {
+                            android.view.View row = found;
+                            while (row.getParent() instanceof android.view.View
+                                    && !(row.getParent() instanceof android.widget.AbsListView)) {
+                                row = (android.view.View) row.getParent();
+                            }
+                            if (!(row.getParent() instanceof android.widget.AbsListView)) row = found;
+                            clicked += " a11yfocus=" + row.performAccessibilityAction(
+                                    android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                        }
                         Log.i(TAG, "ok findtext found at=" + at[0] + "," + at[1] + " size=" + found.getWidth() + "x" + found.getHeight() + sibling + clicked
                                 + " (" + matches + " matches" + places + ")");
                         break;
@@ -1648,6 +1831,55 @@ public final class Probe extends Instrumentation {
                                 + " pieces encoding=base64-utf8 bytes=" + bytes.length + " sha256=" + hash);
                         break;
                     }
+                    case "rootsignals": {
+                        // Calls TikTok's own root checks and prints what each one answers. Each
+                        // extra (status, packages, paths, whichsu, sucommand) names one static
+                        // method as Class.method taking nothing or a Context. Off the main thread,
+                        // since the su checks start a shell and wait on it.
+                        final String[] names = {"status", "packages", "paths", "whichsu", "sucommand"};
+                        final String[] targets = new String[names.length];
+                        for (int i = 0; i < names.length; i++) targets[i] = intent.getStringExtra(names[i]);
+                        new Thread(() -> {
+                            StringBuilder out = new StringBuilder();
+                            for (int i = 0; i < names.length; i++) {
+                                if (targets[i] == null) continue;
+                                out.append(' ').append(names[i]).append('=');
+                                try {
+                                    int dot = targets[i].lastIndexOf('.');
+                                    Class<?> owner = loader.loadClass(targets[i].substring(0, dot));
+                                    String method = targets[i].substring(dot + 1);
+                                    Object result = null;
+                                    boolean called = false;
+                                    for (Method candidate : owner.getDeclaredMethods()) {
+                                        Class<?> returns = candidate.getReturnType();
+                                        if (!candidate.getName().equals(method)
+                                                || !Modifier.isStatic(candidate.getModifiers())
+                                                || (returns != boolean.class && !Map.class.isAssignableFrom(returns))) {
+                                            continue;
+                                        }
+                                        Class<?>[] types = candidate.getParameterTypes();
+                                        candidate.setAccessible(true);
+                                        if (types.length == 0) {
+                                            result = candidate.invoke(null);
+                                        } else if (types.length == 1 && types[0] == Context.class) {
+                                            result = candidate.invoke(null, app);
+                                        } else {
+                                            continue;
+                                        }
+                                        called = true;
+                                        break;
+                                    }
+                                    out.append(called ? String.valueOf(result) : "nomethod");
+                                } catch (Throwable failure) {
+                                    Throwable cause = failure instanceof java.lang.reflect.InvocationTargetException
+                                            && failure.getCause() != null ? failure.getCause() : failure;
+                                    out.append("failed:").append(cause.getClass().getSimpleName());
+                                }
+                            }
+                            Log.i(TAG, "ok rootsignals" + out);
+                        }).start();
+                        break;
+                    }
                     case "get": {
                         String key = required(intent, "key");
                         Log.i(TAG, "ok get " + key + "=" + valueOf(find(key)));
@@ -1750,6 +1982,51 @@ public final class Probe extends Instrumentation {
                             Log.i(TAG, "views[" + pieces + "] " + text.substring(at, Math.min(text.length(), at + 3000)));
                         }
                         Log.i(TAG, "ok views " + text.length() + " chars in " + pieces + " pieces");
+                        break;
+                    }
+                    case "fillframes": {
+                        // Every frame for a while (-e ms, 6000 by default), each feed cell's
+                        // player on screen, the video surfaces in it and the cover still beside
+                        // it: where each one's picture spans in the window, its height, scale,
+                        // pivot and translation, and whether it shows. A line goes out only for a
+                        // frame where one of them changed, so a swipe made while this runs shows
+                        // the frame a picture jumps in (#390).
+                        final android.app.Activity activity = (android.app.Activity) loader.loadClass(UTILS)
+                                .getMethod("getActivity").invoke(null);
+                        if (activity == null) throw new IllegalStateException("no current activity");
+                        String asked = intent.getStringExtra("ms");
+                        final long started = android.os.SystemClock.uptimeMillis();
+                        final long until = started + (asked == null ? 6000L : Long.parseLong(asked));
+                        final int playerId = activity.getResources().getIdentifier("player_view", "id", activity.getPackageName());
+                        final int coverId = activity.getResources().getIdentifier("cover", "id", activity.getPackageName());
+                        if (playerId == 0) throw new IllegalStateException("no player_view id");
+                        final android.view.View decor = activity.getWindow().getDecorView();
+                        final String[] last = {""};
+                        final int[] lines = {0};
+                        decor.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+                            @Override
+                            public boolean onPreDraw() {
+                                long now = android.os.SystemClock.uptimeMillis();
+                                if (now > until || lines[0] >= 800) {
+                                    if (decor.getViewTreeObserver().isAlive()) {
+                                        decor.getViewTreeObserver().removeOnPreDrawListener(this);
+                                    }
+                                    Log.i(TAG, "ok fillframes done, " + lines[0] + " lines");
+                                    return true;
+                                }
+                                StringBuilder frame = new StringBuilder();
+                                describePlayers(decor, decor.getHeight(), playerId, coverId, frame);
+                                String text = frame.toString();
+                                if (!text.equals(last[0])) {
+                                    last[0] = text;
+                                    lines[0]++;
+                                    Log.i(TAG, "fill +" + (now - started) + "ms" + text);
+                                }
+                                return true;
+                            }
+                        });
+                        decor.invalidate();
+                        Log.i(TAG, "ok fillframes watching");
                         break;
                     }
                     case "strings": {
@@ -2580,11 +2857,133 @@ public final class Probe extends Instrumentation {
                         for (String name : required(intent, "names").split(",")) {
                             Field field = owner.getDeclaredField(name.trim());
                             field.setAccessible(true);
-                            String shown = String.valueOf(field.get(null));
+                            String shown = describeValue(field.get(null));
                             if (name.trim().endsWith("Id") && !shown.isEmpty()) shown = "<id " + (shown.hashCode() & 0xffff) + ">";
                             out.append(' ').append(name.trim()).append('=').append(shown);
                         }
                         Log.i(TAG, "ok fields" + out);
+                        break;
+                    }
+                    case "splitstate": {
+                        // TikTok's split comment containers after a fold or a rebuild (#398): its
+                        // static registry, keyed HOME_ or FRIENDS_FEED_ plus an activity's hash,
+                        // with each container alive or gone and whether it says split (LJIIL),
+                        // then the tag each feed list panel asks comments for and the activity it
+                        // is attached to, against the current activity's hash.
+                        Object current = loader.loadClass("app.morphe.extension.shared.Utils").getMethod("getActivity").invoke(null);
+                        StringBuilder out = new StringBuilder(" activity=").append(current == null ? "none" : current.hashCode());
+                        // Each width the split checks could read, in dp: the activity's resources,
+                        // the application's, the system's, and the window's own bounds.
+                        if (current instanceof android.app.Activity) {
+                            android.app.Activity shown = (android.app.Activity) current;
+                            out.append(" widths res=").append(shown.getResources().getConfiguration().screenWidthDp)
+                                    .append(" app=").append(shown.getApplicationContext().getResources().getConfiguration().screenWidthDp)
+                                    .append(" sys=").append(android.content.res.Resources.getSystem().getConfiguration().screenWidthDp);
+                            if (Build.VERSION.SDK_INT >= 30) {
+                                float density = android.content.res.Resources.getSystem().getDisplayMetrics().density;
+                                out.append(" window=").append(Math.round(shown.getWindowManager().getCurrentWindowMetrics().getBounds().width() / density));
+                            }
+                        }
+                        Class<?> registry = loader.loadClass("com.ss.android.ugc.aweme.tablet.impl.business.split.split.SplitContainerManager");
+                        for (Field field : registry.getDeclaredFields()) {
+                            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())
+                                    || !java.util.Map.class.isAssignableFrom(field.getType())) continue;
+                            field.setAccessible(true);
+                            Object map = field.get(null);
+                            out.append(' ').append(field.getName()).append("={");
+                            if (map != null) {
+                                for (java.util.Map.Entry<?, ?> entry : new java.util.ArrayList<>(((java.util.Map<?, ?>) map).entrySet())) {
+                                    Object value = entry.getValue();
+                                    out.append(entry.getKey()).append("->");
+                                    if (value instanceof java.lang.ref.Reference) {
+                                        Object container = ((java.lang.ref.Reference<?>) value).get();
+                                        out.append(container == null ? "gone" : container.getClass().getName() + " split=" + callNoArg(container, "LJIIL"));
+                                    } else {
+                                        out.append(value instanceof CharSequence || value instanceof Number ? value : ref(value));
+                                    }
+                                    out.append(';');
+                                }
+                            }
+                            out.append('}');
+                        }
+                        Class<?> panelType = loader.loadClass("com.ss.android.ugc.aweme.feed.panel.BaseListFragmentPanel");
+                        Field tag = panelType.getDeclaredField("c");
+                        tag.setAccessible(true);
+                        Field owner = null;
+                        for (Class<?> c = panelType; c != null && owner == null; c = c.getSuperclass()) {
+                            try {
+                                owner = c.getDeclaredField("activity");
+                            } catch (NoSuchFieldException notHere) {
+                                // Declared further up.
+                            }
+                        }
+                        if (owner != null) owner.setAccessible(true);
+                        for (Object panel : reachableOfType(current, panelType)) {
+                            Object attached = owner == null ? null : owner.get(panel);
+                            out.append(" panel ").append(ref(panel)).append(" tag=").append(tag.get(panel))
+                                    .append(" attached=").append(attached == null ? "none" : attached.hashCode());
+                        }
+                        // The container each MainFragment's view builder kept (MainFragment.Pb() on
+                        // 47.7.3), registered or not: when the container check says no, the builder
+                        // gets back a plain view holder that never reaches the registry.
+                        java.util.ArrayDeque<Object> managers = new java.util.ArrayDeque<>();
+                        Object top = callNoArg(current, "getSupportFragmentManager");
+                        if (top != null && !"?".equals(top)) managers.add(top);
+                        while (!managers.isEmpty()) {
+                            Object manager = managers.poll();
+                            // getFragments() is renamed on 47.7.3.
+                            Object fragments = callNoArg(manager, "getFragments");
+                            if (!(fragments instanceof java.util.List)) fragments = callNoArg(manager, "LJJLIIIJLJLI");
+                            if (!(fragments instanceof java.util.List)) continue;
+                            for (Object fragment : (java.util.List<?>) fragments) {
+                                if (fragment == null) continue;
+                                if (fragment.getClass().getName().endsWith(".MainFragment")) {
+                                    Object held = callNoArg(fragment, "Pb");
+                                    out.append(" main ").append(ref(fragment)).append(" view=").append(callNoArg(fragment, "getView") != null)
+                                            .append(" holder=").append(held == null ? "none" : held.getClass().getName())
+                                            .append(" split=").append(callNoArg(held, "LJIIL"));
+                                }
+                                Object child = callNoArg(fragment, "getChildFragmentManager");
+                                if (child != null && !"?".equals(child)) managers.add(child);
+                            }
+                        }
+                        Log.i(TAG, "ok splitstate" + out);
+                        break;
+                    }
+                    case "showdialog": {
+                        // One of TikTok's dialog fragments shown over the current activity, made
+                        // from its class name with no arguments: -e class com.bytedance.android.
+                        // livesdk.widgets.giftwidget.presenter.FastGiftConfirmDialog. For a theme
+                        // check of a card an account's rooms never offer (the Rose's quick gift
+                        // card only shows where the room has a quick gift button). It's only
+                        // shown, nothing on it is pressed, and back closes it.
+                        String name = required(intent, "class");
+                        Object current = resumedActivity("showdialog", loader);
+                        Object manager = callNoArg(current, "getSupportFragmentManager");
+                        if (manager == null || "?".equals(manager)) {
+                            Log.i(TAG, "fail showdialog no fragment manager on " + ref(current));
+                            break;
+                        }
+                        Object dialog = loader.loadClass(name).getDeclaredConstructor().newInstance();
+                        // show(FragmentManager, String), found by its shape where the name is gone.
+                        Method show = null;
+                        for (Class<?> c = dialog.getClass(); c != null && show == null; c = c.getSuperclass()) {
+                            for (Method m : c.getDeclaredMethods()) {
+                                Class<?>[] types = m.getParameterTypes();
+                                if (types.length == 2 && types[1] == String.class && types[0].isInstance(manager)
+                                        && m.getReturnType() == void.class && !m.getName().equals("showNow")) {
+                                    show = m;
+                                    if (m.getName().equals("show")) break;
+                                }
+                            }
+                        }
+                        if (show == null) {
+                            Log.i(TAG, "fail showdialog no show method on " + name);
+                            break;
+                        }
+                        show.setAccessible(true);
+                        show.invoke(dialog, manager, "adrmodtt_probe");
+                        Log.i(TAG, "ok showdialog " + name + " via " + show.getDeclaringClass().getName() + "." + show.getName());
                         break;
                     }
                     case "call": {
@@ -3071,6 +3470,10 @@ public final class Probe extends Instrumentation {
                         }, gap);
                         break;
                     }
+                    case "playerlog": {
+                        PlayerLog.toggle(loader, intent);
+                        break;
+                    }
                     case "startwatch": {
                         AutoAdvanceWatch.start(loader, intent);
                         break;
@@ -3356,6 +3759,294 @@ public final class Probe extends Instrumentation {
                         Log.i(TAG, "ok liveroom " + hidden.size() + " rooms");
                         break;
                     }
+                    case "storylist": {
+                        // Each story the story viewer bound (#393), and the list of its author's
+                        // stories it carries: Aweme.getUserStory().getStories(), its size, and
+                        // where the bound story sits in it.
+                        Field stories = loader.loadClass("app.morphe.extension.tiktok.download.StoryDownloads")
+                                .getDeclaredField("STORIES");
+                        stories.setAccessible(true);
+                        java.util.Map<?, ?> bound = (java.util.Map<?, ?>) stories.get(null);
+                        StringBuilder out = new StringBuilder();
+                        java.util.List<Object> awemes;
+                        synchronized (bound) {
+                            awemes = new java.util.ArrayList<>(bound.values());
+                        }
+                        for (Object aweme : awemes) {
+                            Object userStory = aweme.getClass().getMethod("getUserStory").invoke(aweme);
+                            Object boundId = aweme.getClass().getMethod("getAid").invoke(aweme);
+                            out.append("\n  story ").append(boundId).append(" userStory=")
+                                    .append(userStory == null ? "null" : userStory.getClass().getSimpleName());
+                            if (userStory == null) continue;
+                            java.util.List<?> list = (java.util.List<?>) userStory.getClass().getMethod("getStories").invoke(userStory);
+                            out.append(" stories=").append(list == null ? "null" : list.size())
+                                    .append(" total=").append(userStory.getClass().getMethod("getTotalCount").invoke(userStory))
+                                    .append(" more=").append(userStory.getClass().getMethod("getHasMoreBefore").invoke(userStory))
+                                    .append('/').append(userStory.getClass().getMethod("getHasMoreAfter").invoke(userStory));
+                            if (list == null) continue;
+                            for (Object item : list) {
+                                if (item == null) {
+                                    out.append("\n    null");
+                                    continue;
+                                }
+                                Object id = item.getClass().getMethod("getAid").invoke(item);
+                                Object video = item.getClass().getMethod("getVideo").invoke(item);
+                                Object play = video == null ? null : video.getClass().getMethod("getPlayAddr").invoke(video);
+                                java.util.List<?> urls = play == null ? null
+                                        : (java.util.List<?>) play.getClass().getMethod("getUrlList").invoke(play);
+                                out.append("\n    ").append(id).append(String.valueOf(id).equals(String.valueOf(boundId)) ? " this" : "")
+                                        .append(" type=").append(item.getClass().getMethod("getAwemeType").invoke(item))
+                                        .append(" urls=").append(urls == null ? "null" : urls.size())
+                                        .append(" photos=").append(item.getClass().getMethod("getPhotoModeImageInfo").invoke(item) != null)
+                                        .append(" created=").append(item.getClass().getMethod("getCreateTime").invoke(item));
+                            }
+                        }
+                        Log.i(TAG, "ok storylist bound=" + awemes.size() + out);
+                        break;
+                    }
+                    case "taptargets": {
+                        // What LIVE auto tap keeps its taps off in the room in front (#335): every
+                        // view it counts as a button, by class, id and place, how many guest seats
+                        // it found, and the spot it would pick now with no spot skipped.
+                        // The LIVE activity auto tap holds, not the feed behind it.
+                        Field held = loader.loadClass("app.morphe.extension.tiktok.live.LiveAutoTap").getDeclaredField("host");
+                        held.setAccessible(true);
+                        android.app.Activity activity = (android.app.Activity)
+                                ((java.lang.ref.WeakReference<?>) held.get(null)).get();
+                        if (activity == null) {
+                            Log.i(TAG, "ok taptargets no LIVE room held");
+                            break;
+                        }
+                        android.view.ViewGroup content = activity.findViewById(android.R.id.content);
+                        android.graphics.Rect area = new android.graphics.Rect();
+                        content.getGlobalVisibleRect(area);
+                        long largest = (long) area.width() * area.height() / 4;
+                        StringBuilder out = new StringBuilder(" area=").append(area.toShortString());
+                        java.util.List<android.graphics.Rect> taken = new java.util.ArrayList<>();
+                        java.util.ArrayDeque<android.view.View> queue = new java.util.ArrayDeque<>();
+                        queue.add(content);
+                        while (!queue.isEmpty()) {
+                            android.view.View view = queue.poll();
+                            if (view.getVisibility() != android.view.View.VISIBLE || view.getAlpha() == 0f) continue;
+                            android.graphics.Rect rect = new android.graphics.Rect();
+                            if ((view.isClickable() || view.isLongClickable()) && view.getGlobalVisibleRect(rect)
+                                    && (long) rect.width() * rect.height() < largest) {
+                                rect.offset(-area.left, -area.top);
+                                taken.add(rect);
+                                String id = idName(view, activity.getResources());
+                                out.append("\n  ").append(view.getClass().getName()).append(' ').append(id)
+                                        .append(' ').append(rect.toShortString());
+                            } else if (!(view instanceof android.view.TextureView || view instanceof android.view.SurfaceView)
+                                    && view.getGlobalVisibleRect(rect) && rect.width() * 50L >= area.width()
+                                    && rect.height() * 50L >= area.height()
+                                    && (long) rect.width() * rect.height() * 50 >= (long) area.width() * area.height()
+                                    && (long) rect.width() * rect.height() * 10 < (long) area.width() * area.height() * 6) {
+                                // A box between a fiftieth and six tenths of the room: guest seats show up here.
+                                rect.offset(-area.left, -area.top);
+                                out.append("\n  box ").append(view.getClass().getName()).append(' ')
+                                        .append(idName(view, activity.getResources())).append(' ').append(rect.toShortString());
+                            } else if ((view instanceof android.view.TextureView || view instanceof android.view.SurfaceView)
+                                    && view.getGlobalVisibleRect(rect)) {
+                                // Each picture in the room and the three views above it, so a
+                                // guest grid shows whether its seats are drawn apart.
+                                out.append("\n  video ").append(view.getClass().getName()).append(' ')
+                                        .append(idName(view, activity.getResources())).append(' ').append(rect.toShortString());
+                                android.view.ViewParent parent = view.getParent();
+                                for (int up = 0; up < 3 && parent instanceof android.view.View; up++) {
+                                    android.view.View above = (android.view.View) parent;
+                                    android.graphics.Rect box = new android.graphics.Rect();
+                                    above.getGlobalVisibleRect(box);
+                                    out.append(" < ").append(above.getClass().getName()).append(' ')
+                                            .append(idName(above, activity.getResources())).append(' ').append(box.toShortString());
+                                    parent = above.getParent();
+                                }
+                            }
+                            if (view instanceof android.view.ViewGroup) {
+                                android.view.ViewGroup group = (android.view.ViewGroup) view;
+                                for (int i = 0; i < group.getChildCount(); i++) queue.add(group.getChildAt(i));
+                            }
+                        }
+                        Class<?> autoTap = loader.loadClass("app.morphe.extension.tiktok.live.LiveAutoTap");
+                        Method seatId = autoTap.getDeclaredMethod("seatId", android.content.Context.class);
+                        seatId.setAccessible(true);
+                        Method seatsOf = autoTap.getDeclaredMethod("seats", android.view.View.class, int.class,
+                                android.graphics.Rect.class, java.util.List.class);
+                        seatsOf.setAccessible(true);
+                        java.util.List<android.graphics.Rect> seats = new java.util.ArrayList<>();
+                        seatsOf.invoke(null, content, seatId.invoke(null, activity), area, seats);
+                        out.append("\n  seats=").append(seats.size());
+                        for (android.graphics.Rect seat : seats) out.append("\n  seat ").append(seat.toShortString());
+                        Method pick = autoTap.getDeclaredMethod("tapPoint", int.class, int.class, java.util.List.class,
+                                java.util.List.class, int.class, int.class, java.util.Random.class);
+                        pick.setAccessible(true);
+                        int clear = Math.round(16 * activity.getResources().getDisplayMetrics().density);
+                        float[] point = (float[]) pick.invoke(null, area.width(), area.height(), taken, seats, clear, 0,
+                                new java.util.Random(1));
+                        out.append("\n  pick=").append(point == null ? "none" : Math.round(point[0]) + "," + Math.round(point[1]) + " spot " + (int) point[2]);
+                        // One line per entry: a LIVE room has more views than one log entry holds.
+                        for (String line : ("ok taptargets" + out).split("\n")) Log.i(TAG, line);
+                        break;
+                    }
+                    case "touchpath": {
+                        // Which views a touch at -e x -e y (window pixels) goes through in the LIVE
+                        // room auto tap holds (#335), and which one takes it: a touch down goes in
+                        // through the window, each ViewGroup's touch target is followed down from
+                        // the decor view, and a cancel ends the touch so nothing is clicked. Each
+                        // step shows the view's class, id, place and its touch listener's class.
+                        Field held = loader.loadClass("app.morphe.extension.tiktok.live.LiveAutoTap").getDeclaredField("host");
+                        held.setAccessible(true);
+                        android.app.Activity activity = (android.app.Activity)
+                                ((java.lang.ref.WeakReference<?>) held.get(null)).get();
+                        if (activity == null) {
+                            Log.i(TAG, "ok touchpath no LIVE room held");
+                            break;
+                        }
+                        float x = Float.parseFloat(intent.getStringExtra("x"));
+                        float y = Float.parseFloat(intent.getStringExtra("y"));
+                        android.view.View decor = activity.getWindow().getDecorView();
+                        long now = android.os.SystemClock.uptimeMillis();
+                        android.view.MotionEvent down = android.view.MotionEvent.obtain(now, now,
+                                android.view.MotionEvent.ACTION_DOWN, x, y, 0);
+                        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                        boolean taken = decor.dispatchTouchEvent(down);
+                        down.recycle();
+                        StringBuilder out = new StringBuilder(" at ").append(Math.round(x)).append(',')
+                                .append(Math.round(y)).append(" taken=").append(taken);
+                        Field first = android.view.ViewGroup.class.getDeclaredField("mFirstTouchTarget");
+                        first.setAccessible(true);
+                        Field info = android.view.View.class.getDeclaredField("mListenerInfo");
+                        info.setAccessible(true);
+                        android.view.View view = decor;
+                        for (int depth = 0; view != null && depth < 80; depth++) {
+                            android.graphics.Rect rect = new android.graphics.Rect();
+                            view.getGlobalVisibleRect(rect);
+                            String listener = null;
+                            Object listeners = info.get(view);
+                            if (listeners != null) {
+                                Field touch = listeners.getClass().getDeclaredField("mOnTouchListener");
+                                touch.setAccessible(true);
+                                Object onTouch = touch.get(listeners);
+                                if (onTouch != null) listener = onTouch.getClass().getName();
+                            }
+                            out.append("\n  ").append(view.getClass().getName()).append(' ')
+                                    .append(idName(view, activity.getResources())).append(' ').append(rect.toShortString())
+                                    .append(view.isClickable() ? " clickable" : "").append(listener == null ? "" : " touch=" + listener);
+                            android.view.View next = null;
+                            if (view instanceof android.view.ViewGroup) {
+                                Object target = first.get(view);
+                                if (target != null) {
+                                    Field child = target.getClass().getDeclaredField("child");
+                                    child.setAccessible(true);
+                                    next = (android.view.View) child.get(target);
+                                }
+                            }
+                            view = next;
+                        }
+                        long later = android.os.SystemClock.uptimeMillis();
+                        android.view.MotionEvent cancel = android.view.MotionEvent.obtain(now, later,
+                                android.view.MotionEvent.ACTION_CANCEL, x, y, 0);
+                        cancel.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                        decor.dispatchTouchEvent(cancel);
+                        cancel.recycle();
+                        for (String line : ("ok touchpath" + out).split("\n")) Log.i(TAG, line);
+                        break;
+                    }
+                    case "layertap": {
+                        // Taps sent straight to one view's own touch handling, past every child
+                        // in front of it (#335): the view with id -e id in the LIVE room auto tap
+                        // holds, or the view -e up levels above it, at -e x -e y in window pixels,
+                        // -e taps times (5 by default) 250 ms apart. Logs what each call returned.
+                        Field held = loader.loadClass("app.morphe.extension.tiktok.live.LiveAutoTap").getDeclaredField("host");
+                        held.setAccessible(true);
+                        final android.app.Activity activity = (android.app.Activity)
+                                ((java.lang.ref.WeakReference<?>) held.get(null)).get();
+                        if (activity == null) {
+                            Log.i(TAG, "ok layertap no LIVE room held");
+                            break;
+                        }
+                        int id = activity.getResources().getIdentifier(intent.getStringExtra("id"), "id", activity.getPackageName());
+                        android.view.View found = id == 0 ? null : activity.findViewById(id);
+                        String upText = intent.getStringExtra("up");
+                        for (int up = upText == null ? 0 : Integer.parseInt(upText); found != null && up > 0; up--) {
+                            found = found.getParent() instanceof android.view.View ? (android.view.View) found.getParent() : null;
+                        }
+                        if (found == null) {
+                            Log.i(TAG, "ok layertap no such view");
+                            break;
+                        }
+                        final android.view.View layer = found;
+                        int[] at = new int[2];
+                        layer.getLocationInWindow(at);
+                        final float x = Float.parseFloat(intent.getStringExtra("x")) - at[0];
+                        final float y = Float.parseFloat(intent.getStringExtra("y")) - at[1];
+                        String tapsText = intent.getStringExtra("taps");
+                        final int taps = tapsText == null ? 5 : Integer.parseInt(tapsText);
+                        Log.i(TAG, "layertap on " + layer.getClass().getName() + " " + idName(layer, activity.getResources())
+                                + " at local " + Math.round(x) + "," + Math.round(y));
+                        final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+                        for (int i = 0; i < taps; i++) {
+                            final int index = i;
+                            main.postDelayed(() -> {
+                                long downAt = android.os.SystemClock.uptimeMillis();
+                                android.view.MotionEvent down = android.view.MotionEvent.obtain(downAt, downAt,
+                                        android.view.MotionEvent.ACTION_DOWN, x, y, 0);
+                                down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                                boolean tookDown = layer.onTouchEvent(down);
+                                down.recycle();
+                                main.postDelayed(() -> {
+                                    android.view.MotionEvent lift = android.view.MotionEvent.obtain(downAt,
+                                            android.os.SystemClock.uptimeMillis(), android.view.MotionEvent.ACTION_UP, x, y, 0);
+                                    lift.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                                    boolean tookUp = layer.onTouchEvent(lift);
+                                    lift.recycle();
+                                    Log.i(TAG, "layertap " + index + " down=" + tookDown + " up=" + tookUp);
+                                    if (index == taps - 1) Log.i(TAG, "ok layertap done");
+                                }, 50);
+                            }, 250L * i);
+                        }
+                        break;
+                    }
+                    case "danmaku": {
+                        // Scrolling comments (#98): the current video's own danmaku flags, its
+                        // frame size, and every yes/no TikTok's danmaku service answers for it or
+                        // for the app, so a landscape player with no overlay shows which check
+                        // says no. -e force true sets the video's support flag the way a server
+                        // answer would, on this one video object only, then answers again.
+                        Object aweme = currentAweme();
+                        if (aweme == null) throw new IllegalStateException("no current video");
+                        StringBuilder out = new StringBuilder();
+                        Object video = optional(aweme, "getVideo");
+                        out.append(" frame=").append(optional(video, "getWidth")).append('x').append(optional(video, "getHeight"));
+                        if ("true".equals(intent.getStringExtra("force"))) {
+                            aweme.getClass().getMethod("setSupportDanmaku", boolean.class).invoke(aweme, true);
+                            out.append(" forced");
+                        }
+                        out.append(" support=").append(optional(aweme, "isSupportDanmaku"))
+                                .append(" has=").append(optional(aweme, "isHasDanmaku"));
+                        Class<?> awemeType = loader.loadClass("com.ss.android.ugc.aweme.feed.model.Aweme");
+                        Object service = loader.loadClass("com.ss.android.ugc.aweme.service.DanmakuServiceImpl")
+                                .getDeclaredConstructor().newInstance();
+                        java.util.List<Method> answers = new java.util.ArrayList<>();
+                        for (Method method : service.getClass().getDeclaredMethods()) {
+                            if (method.getReturnType() != boolean.class || java.lang.reflect.Modifier.isStatic(method.getModifiers())) continue;
+                            Class<?>[] params = method.getParameterTypes();
+                            if (params.length == 0 || (params.length == 1 && params[0] == awemeType)) answers.add(method);
+                        }
+                        java.util.Collections.sort(answers, (a, b) -> a.getName().compareTo(b.getName()));
+                        for (Method method : answers) {
+                            Object answer;
+                            try {
+                                method.setAccessible(true);
+                                answer = method.getParameterTypes().length == 0 ? method.invoke(service) : method.invoke(service, aweme);
+                            } catch (java.lang.reflect.InvocationTargetException failed) {
+                                answer = "threw " + failed.getCause().getClass().getSimpleName();
+                            }
+                            out.append(' ').append(method.getName()).append(method.getParameterTypes().length == 0 ? "()" : "(v)")
+                                    .append('=').append(answer);
+                        }
+                        Log.i(TAG, "ok danmaku" + out);
+                        break;
+                    }
                     case "livechip": {
                         // Each check the Record button's watcher makes on the LIVE room page it
                         // holds (#37), so a button that never stays up shows which one says no.
@@ -3537,30 +4228,7 @@ public final class Probe extends Instrumentation {
                         // gift guide bubble: -e class X.0zJ8 on 47.7.3). -e text fills its empty
                         // TextViews; the context the view ended up with and each TextView's color go
                         // to the log. -e remove true takes it off again.
-                        // The resumed activity comes from ActivityThread's records: Adrmodtt's
-                        // tracked activity stays MainActivity while a LIVE room is in front, and a
-                        // LIVE view built on MainActivity's theme fails on a missing LIVE attribute.
-                        android.app.Activity activity = null;
-                        try {
-                            Class<?> threadClass = Class.forName("android.app.ActivityThread");
-                            Object thread = threadClass.getMethod("currentActivityThread").invoke(null);
-                            java.lang.reflect.Field records = threadClass.getDeclaredField("mActivities");
-                            records.setAccessible(true);
-                            for (Object record : ((java.util.Map<?, ?>) records.get(thread)).values()) {
-                                java.lang.reflect.Field paused = record.getClass().getDeclaredField("paused");
-                                paused.setAccessible(true);
-                                if (paused.getBoolean(record)) continue;
-                                java.lang.reflect.Field held = record.getClass().getDeclaredField("activity");
-                                held.setAccessible(true);
-                                activity = (android.app.Activity) held.get(record);
-                            }
-                        } catch (ReflectiveOperationException | RuntimeException e) {
-                            Log.w(TAG, "addview: no resumed activity from ActivityThread, using the tracked one: " + e);
-                        }
-                        if (activity == null) {
-                            activity = (android.app.Activity) loader.loadClass(UTILS).getMethod("getActivity").invoke(null);
-                        }
-                        if (activity == null) throw new IllegalStateException("no current activity");
+                        android.app.Activity activity = resumedActivity("addview", loader);
                         android.view.View content = activity.findViewById(android.R.id.content);
                         if (!(content instanceof android.widget.FrameLayout)) throw new IllegalStateException("no content frame");
                         android.widget.FrameLayout frame = (android.widget.FrameLayout) content;
@@ -3574,10 +4242,33 @@ public final class Probe extends Instrumentation {
                         Class<?> type = loader.loadClass(required(intent, "class"));
                         android.view.View view = (android.view.View) type
                                 .getConstructor(android.content.Context.class).newInstance(activity);
+                        // -e layout 0x7f0d2e90 then inflates that layout from the view's own
+                        // context into it, the way TikTok fills the view later (#362's DM-creator
+                        // tip: the tip's text layout goes into X.0Xoe from X.0Xoe's context).
+                        String layout = intent.getStringExtra("layout");
+                        if (layout != null && view instanceof android.view.ViewGroup) {
+                            android.view.LayoutInflater.from(view.getContext())
+                                    .inflate(Integer.decode(layout), (android.view.ViewGroup) view, true);
+                        }
                         String text = intent.getStringExtra("text");
                         StringBuilder out = new StringBuilder("ok addview ").append(type.getName())
                                 .append(" in ").append(activity.getClass().getSimpleName()).append(" context=")
                                 .append(view.getContext() == activity ? "the activity" : view.getContext().getClass().getName());
+                        // -e attr 0x7f061023 resolves that color attribute on the view's context
+                        // and on the activity's, the colors a view draws by hand (the tip's bubble).
+                        String attr = intent.getStringExtra("attr");
+                        if (attr != null) {
+                            for (Context themed : new Context[] {view.getContext(), activity}) {
+                                android.util.TypedValue value = new android.util.TypedValue();
+                                boolean found = themed.getTheme().resolveAttribute(Integer.decode(attr), value, true);
+                                out.append("\n  attr ").append(attr).append(themed == activity ? " on the activity=" : " on the view=")
+                                        .append(!found ? "unset" : value.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT
+                                                && value.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT
+                                                ? Integer.toHexString(value.data)
+                                                : value.resourceId != 0 ? Integer.toHexString(themed.getColor(value.resourceId))
+                                                : "type " + value.type);
+                            }
+                        }
                         java.util.ArrayDeque<android.view.View> queue = new java.util.ArrayDeque<>();
                         queue.add(view);
                         while (!queue.isEmpty()) {
@@ -3913,6 +4604,18 @@ public final class Probe extends Instrumentation {
             String value = intent.getStringExtra(name);
             if (value == null) throw new IllegalArgumentException("-e " + name + " is required");
             return value;
+        }
+
+        /** A field's value as text, with arrays and maps of arrays spelled out rather than shown by identity. */
+        private static String describeValue(Object value) {
+            if (value instanceof Object[]) return java.util.Arrays.deepToString((Object[]) value);
+            if (!(value instanceof java.util.Map)) return String.valueOf(value);
+            StringBuilder out = new StringBuilder("{");
+            for (java.util.Map.Entry<?, ?> entry : ((java.util.Map<?, ?>) value).entrySet()) {
+                if (out.length() > 1) out.append(", ");
+                out.append(describeValue(entry.getKey())).append('=').append(describeValue(entry.getValue()));
+            }
+            return out.append('}').toString();
         }
 
         /** One line for each shown view under x,y, from this view down: its class, id, bounds and background. */
@@ -4282,6 +4985,81 @@ public final class Probe extends Instrumentation {
             }
         }
 
+        /** Each player on screen with its surfaces and its cover still, for fillframes. */
+        private static void describePlayers(android.view.View view, int windowHeight, int playerId, int coverId,
+                StringBuilder out) {
+            if (view.getId() == playerId && view.getVisibility() == android.view.View.VISIBLE) {
+                float[] span = windowSpan(view);
+                if (span[1] <= 0f || span[0] >= windowHeight) return;
+                out.append("\n P").append(Integer.toHexString(System.identityHashCode(view)));
+                describeFrame(view, span, out);
+                if (view instanceof android.view.ViewGroup) {
+                    android.view.ViewGroup group = (android.view.ViewGroup) view;
+                    for (int i = 0, count = group.getChildCount(); i < count; i++) {
+                        android.view.View surface = group.getChildAt(i);
+                        if (!(surface instanceof android.view.SurfaceView) && !(surface instanceof android.view.TextureView)) {
+                            continue;
+                        }
+                        out.append(" | ").append(surface instanceof android.view.SurfaceView ? "S" : "T")
+                                .append(Integer.toHexString(System.identityHashCode(surface)));
+                        describeFrame(surface, windowSpan(surface), out);
+                        if (surface instanceof android.view.TextureView) {
+                            android.graphics.Matrix content = ((android.view.TextureView) surface).getTransform(null);
+                            if (!content.isIdentity()) {
+                                float[] values = new float[9];
+                                content.getValues(values);
+                                out.append(" tx=").append(values[android.graphics.Matrix.MSCALE_Y])
+                                        .append('@').append(values[android.graphics.Matrix.MTRANS_Y]);
+                            }
+                        }
+                    }
+                }
+                android.view.ViewParent space = view.getParent();
+                if (coverId != 0 && space instanceof android.view.ViewGroup) {
+                    android.view.View cover = ((android.view.ViewGroup) space).findViewById(coverId);
+                    if (cover != null) {
+                        out.append(" | C");
+                        describeFrame(cover, windowSpan(cover), out);
+                    }
+                }
+                return;
+            }
+            if (view instanceof android.view.ViewGroup) {
+                android.view.ViewGroup group = (android.view.ViewGroup) view;
+                for (int i = 0, count = group.getChildCount(); i < count; i++) {
+                    describePlayers(group.getChildAt(i), windowHeight, playerId, coverId, out);
+                }
+            }
+        }
+
+        private static void describeFrame(android.view.View view, float[] span, StringBuilder out) {
+            out.append(" y=").append(Math.round(span[0])).append("..").append(Math.round(span[1]))
+                    .append(" h=").append(view.getHeight())
+                    .append(" s=").append(view.getScaleY())
+                    .append(" pv=").append(view.getPivotY())
+                    .append(" ty=").append(view.getTranslationY());
+            if (view.getVisibility() != android.view.View.VISIBLE) out.append(" vis=").append(view.getVisibility());
+            if (view.getAlpha() != 1f) out.append(" a=").append(view.getAlpha());
+        }
+
+        /** Where the top and bottom edges of {@code view} land in its window, every transform applied. */
+        private static float[] windowSpan(android.view.View view) {
+            float[] points = {0f, 0f, 0f, view.getHeight()};
+            android.view.View at = view;
+            while (true) {
+                android.graphics.Matrix matrix = at.getMatrix();
+                if (!matrix.isIdentity()) matrix.mapPoints(points);
+                points[1] += at.getTop();
+                points[3] += at.getTop();
+                android.view.ViewParent parent = at.getParent();
+                if (!(parent instanceof android.view.View)) break;
+                at = (android.view.View) parent;
+                points[1] -= at.getScrollY();
+                points[3] -= at.getScrollY();
+            }
+            return new float[]{points[1], points[3]};
+        }
+
         private static void walkViews(android.view.View view, int depth, String find, StringBuilder out,
                 android.content.res.Resources resources) {
             String name = idName(view, resources);
@@ -4467,6 +5245,36 @@ public final class Probe extends Instrumentation {
                 return Math.round(android.util.TypedValue.deriveDimension(android.util.TypedValue.COMPLEX_UNIT_SP, px, metrics));
             }
             return Math.round(px / metrics.scaledDensity);
+        }
+
+        /**
+         * The resumed activity, from ActivityThread's records: Adrmodtt's tracked activity stays
+         * MainActivity while a LIVE room is in front, so a LIVE view or dialog built on it fails or
+         * never shows. The tracked one when the records can't be read.
+         */
+        private static android.app.Activity resumedActivity(String action, ClassLoader loader) throws Exception {
+            android.app.Activity activity = null;
+            try {
+                Class<?> threadClass = Class.forName("android.app.ActivityThread");
+                Object thread = threadClass.getMethod("currentActivityThread").invoke(null);
+                java.lang.reflect.Field records = threadClass.getDeclaredField("mActivities");
+                records.setAccessible(true);
+                for (Object record : ((java.util.Map<?, ?>) records.get(thread)).values()) {
+                    java.lang.reflect.Field paused = record.getClass().getDeclaredField("paused");
+                    paused.setAccessible(true);
+                    if (paused.getBoolean(record)) continue;
+                    java.lang.reflect.Field held = record.getClass().getDeclaredField("activity");
+                    held.setAccessible(true);
+                    activity = (android.app.Activity) held.get(record);
+                }
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                Log.w(TAG, action + ": no resumed activity from ActivityThread, using the tracked one: " + e);
+            }
+            if (activity == null) {
+                activity = (android.app.Activity) loader.loadClass(UTILS).getMethod("getActivity").invoke(null);
+            }
+            if (activity == null) throw new IllegalStateException("no current activity");
+            return activity;
         }
 
         private static java.util.List<android.view.View> windowRoots() throws Exception {
@@ -5116,6 +5924,59 @@ public final class Probe extends Instrumentation {
          * path it was found by. Detached pages leave the manager's added list but stay in its map
          * of active ones, one level further down, so the walk goes that deep.
          */
+        /**
+         * Every instance of a type reachable from a root through object fields, collections, maps
+         * and arrays, breadth first and bounded, without entering views, classes or text.
+         */
+        private static java.util.List<Object> reachableOfType(Object root, Class<?> type) {
+            java.util.List<Object> found = new java.util.ArrayList<>();
+            java.util.Set<Object> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            java.util.ArrayDeque<Object[]> queue = new java.util.ArrayDeque<>();
+            queue.add(new Object[] { root, 0 });
+            while (!queue.isEmpty() && seen.size() < 60000 && found.size() < 16) {
+                Object[] next = queue.poll();
+                Object value = next[0];
+                int depth = (Integer) next[1];
+                if (value == null || !seen.add(value)) continue;
+                if (type.isInstance(value)) {
+                    found.add(value);
+                    continue;
+                }
+                if (depth >= 14 || value instanceof android.view.View || value instanceof Class
+                        || value instanceof CharSequence || (value instanceof Context && value != root)) continue;
+                try {
+                    if (value instanceof java.util.Collection) {
+                        for (Object item : new java.util.ArrayList<>((java.util.Collection<?>) value)) queue.add(new Object[] { item, depth + 1 });
+                        continue;
+                    }
+                    if (value instanceof java.util.Map) {
+                        for (Object item : new java.util.ArrayList<>(((java.util.Map<?, ?>) value).values())) queue.add(new Object[] { item, depth + 1 });
+                        continue;
+                    }
+                } catch (RuntimeException unreadable) {
+                    continue;
+                }
+                if (value.getClass().isArray()) {
+                    if (!value.getClass().getComponentType().isPrimitive()) {
+                        for (Object item : (Object[]) value) queue.add(new Object[] { item, depth + 1 });
+                    }
+                    continue;
+                }
+                for (Class<?> c = value.getClass(); c != null && !c.getName().startsWith("java."); c = c.getSuperclass()) {
+                    for (Field field : c.getDeclaredFields()) {
+                        if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.getType().isPrimitive()) continue;
+                        try {
+                            field.setAccessible(true);
+                            queue.add(new Object[] { field.get(value), depth + 1 });
+                        } catch (ReflectiveOperationException | RuntimeException unreadable) {
+                            // Skipped.
+                        }
+                    }
+                }
+            }
+            return found;
+        }
+
         private static java.util.Map<Object, String> reachableFragments(Object manager, Class<?> fragmentType) {
             java.util.Map<Object, String> found = new java.util.IdentityHashMap<>();
             java.util.Set<Object> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());

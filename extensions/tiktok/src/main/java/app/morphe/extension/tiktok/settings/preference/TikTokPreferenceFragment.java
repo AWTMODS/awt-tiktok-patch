@@ -47,6 +47,7 @@ import app.morphe.extension.tiktok.featuregatelab.FeatureGateLabFragment;
 import app.morphe.extension.tiktok.featuregatelab.FeatureGateLabRuntime;
 import app.morphe.extension.tiktok.settings.ProblemReport;
 import app.morphe.extension.tiktok.settings.Settings;
+import app.morphe.extension.tiktok.settings.SystemBarInsets;
 import app.morphe.extension.tiktok.share.ShareUrlSanitizer;
 import app.morphe.extension.tiktok.settings.SettingsStatus;
 import app.morphe.extension.tiktok.settings.preference.categories.CommentsPreferenceCategory;
@@ -482,6 +483,9 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
                 || setting == Settings.FEED_TEXT_BACKDROP || setting == BaseSettings.PAUSED)) {
             app.morphe.extension.tiktok.feed.FeedTextSize.onSettingChanged();
         }
+        if (!applySettingToPreference && (setting == Settings.GRID_SEARCH || setting == BaseSettings.PAUSED)) {
+            app.morphe.extension.tiktok.feed.GridSearch.onSettingChanged();
+        }
         if (!applySettingToPreference && setting == BaseSettings.PAUSED) {
             refreshStatusCard();
         }
@@ -884,7 +888,8 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
             int side = 0;
             list.setPadding(SettingsUi.dp(getActivity(), side), 0,
                     SettingsUi.dp(getActivity(), side), SettingsUi.dp(getActivity(), 24));
-            list.setClipToPadding(false);
+            // The rows run on under the gesture bar, and the last one scrolls clear of it.
+            SystemBarInsets.padUnderBottomBar(list, SettingsUi.dp(getActivity(), 24));
             list.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         }
 
@@ -1421,6 +1426,8 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
         // a reader finds them, the home heading or the page; it said "Settings" for all of
         // them, which is no page.
         String homeTitle = "Adrmodtt";
+        String adrmodtt = L10n.t(context, "Adrmodtt");
+        String about = L10n.t(context, Hub.ABOUT.title);
         // Without an explicit entry, the Lab's title and summary returned zero results on a
         // patched phone even though the row was visible.
         if (featureGateLabInstalled) {
@@ -1434,7 +1441,52 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
                     "override gates"
             ));
         }
-
+        // Pause Adrmodtt is what a reader asking whether a problem is Adrmodtt's searches for.
+        results.add(new SearchResult(
+                null,
+                BaseSettings.PAUSED.key,
+                L10n.t(context, "Pause Adrmodtt"),
+                L10n.t(context, PAUSE_SUMMARY),
+                adrmodtt
+        ));
+        // Its summary carries the bundle version, which is what a reporter searches for.
+        results.add(new SearchResult(
+                null,
+                MorpheTikTokAboutPreference.KEY,
+                "Adrmodtt",
+                MorpheTikTokAboutPreference.currentSummary(context).toString(),
+                about
+        ));
+        // Searching "build" or "patches" found nothing, and the empty state then blamed patches
+        // left unticked in Morphe Manager, while the row that lists them sat on About Adrmodtt.
+        results.add(new SearchResult(
+                null,
+                BuildDetailsPreference.KEY,
+                L10n.t(context, "Build details"),
+                L10n.t(context, BuildDetailsPreference.SUMMARY),
+                about,
+                "version"
+        ));
+        // What's new is on About Adrmodtt only until its notes are read, and so is its result.
+        String releaseVersion = releaseVersion();
+        if (ReleaseNotes.pending(context, releaseVersion)) {
+            results.add(new SearchResult(
+                    null,
+                    ReleaseNotes.KEY,
+                    L10n.t(context, "What's new"),
+                    L10n.f(context, "Changes in Adrmodtt %1$s", ReleaseNotes.rowVersion(context, releaseVersion)),
+                    about,
+                    "release notes changelog"
+            ));
+        }
+        // Somebody looking for "licence" or "notice" is looking for exactly one thing.
+        results.add(new SearchResult(
+                null,
+                LicensesPreference.KEY,
+                LicensesPreference.title(context),
+                LicensesPreference.summary(context),
+                about
+        ));
         return results;
     }
 
@@ -1684,7 +1736,8 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
     /** Each category reveals its controls directly below its compact header. */
     private void createMasterMenu(Context context, PreferenceScreen screen) {
         // The bar isn't a row: onCreateView pins it above the list, so it stays as the rows scroll.
-        masterHeader = SettingsHeaderPreference.master(context, this::navigateBack, null);
+        masterHeader = SettingsHeaderPreference.master(context, this::navigateBack,
+                () -> showRow(SettingsStatusPreference.KEY));
         pageHeader = new SettingsHeader(context);
         pageHeader.setOrder(-1000);
         screen.addPreference(pageHeader);
@@ -1708,6 +1761,7 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
             if (section.isAvailable()) addMenu(screen, section);
         }
         if (FeatureGateLabRuntime.isInstalled()) addFeatureGateLab(screen);
+
         // Search results occupy the space between the field and these category rows.
         for (int index = 0; index < screen.getPreferenceCount(); index++) {
             Preference row = screen.getPreference(index);
@@ -2002,20 +2056,24 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
         // switch as never having changed and the restart it owes would go unsaid.
         noteRestartPending(BaseSettings.PAUSED, pausedBefore);
         noteRestartPending(BaseSettings.SAFE_MODE, safeModeBefore);
-        boolean markerGone = AdrmodttPause.turnBackOn(context);
+        boolean turnedOn = AdrmodttPause.turnBackOn(context);
+        // A save that didn't land leaves the switch where it was, and the row says so.
+        boolean notSaved = BaseSettings.SAFE_MODE.savedValue() || BaseSettings.PAUSED.savedValue();
         Preference row = findPreference(BaseSettings.PAUSED.key);
-        if (row instanceof TogglePreference) ((TogglePreference) row).setChecked(false);
+        if (row instanceof TogglePreference) ((TogglePreference) row).setChecked(BaseSettings.PAUSED.savedValue());
         noteRestartPending(BaseSettings.PAUSED, pausedBefore);
         noteRestartPending(BaseSettings.SAFE_MODE, safeModeBefore);
-        if (markerGone && AdrmodttPause.reason() == AdrmodttPause.Reason.MARKER_FILE) {
+        if (turnedOn && AdrmodttPause.reason() == AdrmodttPause.Reason.MARKER_FILE) {
             // The file is no setting, but the start it paused owes a restart all the same.
             AbstractPreferenceFragment.restartPending.add(AdrmodttPause.MARKER_FILE_NAME);
             refreshRestartPending();
         }
         refreshStatusCard();
-        if (markerGone) {
+        if (turnedOn) {
             SettingsActionBanner.showRestart(context,
                     L10n.t(context, "Adrmodtt turns back on when TikTok restarts."));
+        } else if (notSaved) {
+            SettingsActionBanner.showNotice(context, L10n.t(context, "Couldn't save the change. Try again."));
         } else {
             SettingsActionBanner.showNotice(context, L10n.t(context,
                     "The file adrmodtt-safe-mode couldn't be removed. Delete it from TikTok's folder under Android/data to turn Adrmodtt back on."));
@@ -2174,6 +2232,7 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
     static void onSettingsBatchChanged(java.util.Map<Setting<?>, Object> previousValues) {
         app.morphe.extension.tiktok.feed.FeedTextSize.onSettingChanged();
         app.morphe.extension.tiktok.comment.CommenterDetails.onSettingChanged();
+        app.morphe.extension.tiktok.feed.GridSearch.onSettingChanged();
         TikTokPreferenceFragment current = activeFragment;
         if (current == null || !current.isAdded()) return;
         for (java.util.Map.Entry<Setting<?>, Object> entry : previousValues.entrySet()) {
@@ -2232,9 +2291,7 @@ public class TikTokPreferenceFragment extends AbstractPreferenceFragment {
     private void openHub(Hub hub, String targetKey) {
         closeSearch();
         expandAbout();
-        if (aboutMenu != null) {
-            revealInline(targetKey == null ? aboutMenu.getKey() : targetKey, null);
-        }
+        revealInline(targetKey == null ? aboutMenu.getKey() : targetKey, null);
     }
 
     private void openSection(Section section, String targetKey, String targetMember) {

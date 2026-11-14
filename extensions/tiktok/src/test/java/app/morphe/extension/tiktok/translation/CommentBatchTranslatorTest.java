@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -49,6 +50,7 @@ public class CommentBatchTranslatorTest {
         Utils.setContext(context);
         clearTranslatorState();
         NativeManager.reset();
+        ObservedTranslator.UPDATES.clear();
         com.ss.android.ugc.aweme.translation.service.TranslationLangKevaServiceImpl.reset();
         Settings.COMMENT_BATCH_TRANSLATION.save(true);
     }
@@ -58,6 +60,7 @@ public class CommentBatchTranslatorTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle();
         clearTranslatorState();
         NativeManager.reset();
+        ObservedTranslator.UPDATES.clear();
     }
 
     @Test public void disablingBeforeTheDelayedCallbackDoesNotDispatch() {
@@ -90,7 +93,7 @@ public class CommentBatchTranslatorTest {
     @Test public void aRequestStillInFlightIsFinishedAfterTheSwitchGoesOff() {
         // The other half: turning the switch off while a request is out must not strand it.
         Anchor anchor = loadedAnchor("aid-inflight", "cid-inflight");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the request never went out", 1, NativeManager.requests);
 
         Settings.COMMENT_BATCH_TRANSLATION.save(false);
@@ -106,10 +109,10 @@ public class CommentBatchTranslatorTest {
         // native manager's declared methods, on the bind thread, three times per cell. The
         // manager's shape is a property of its class, so the first cell pays and the rest read
         // three fields.
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor("aid-walk", "cid-walk-0"));
+        bindCell(anchor("aid-walk", "cid-walk-0"));
         int afterFirst = CommentBatchTranslator.nativeMethodWalksForTests;
         for (int cell = 1; cell < 10; cell++) {
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor("aid-walk", "cid-walk-" + cell));
+            bindCell(anchor("aid-walk", "cid-walk-" + cell));
         }
         Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400));
 
@@ -123,7 +126,7 @@ public class CommentBatchTranslatorTest {
         // runner is read by kind: the one List field is the results, the one other reference
         // field is the task, and nothing is reported missing.
         Anchor anchor = loadedAnchor("aid-own", "cid-own");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the request never went out", 1, NativeManager.requests);
         int handled = CommentBatchTranslator.completionsHandledForTests();
 
@@ -178,10 +181,22 @@ public class CommentBatchTranslatorTest {
         Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(351));
     }
 
+    @Test public void aRowBindAsksForTheBatchOnlyAfterTheBindFinishes() {
+        // The cell hook runs mid-bind, before TikTok writes the row's text. A request made there
+        // let the native batch change a comment's translation state under the bind, and the row
+        // kept the comment it showed on the previous sheet (#383).
+        Anchor anchor = loadedAnchor("aid-after-bind", "cid-after-bind");
+        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        assertEquals("the batch was asked for while the row was still binding", 0, NativeManager.requests);
+
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+        assertEquals("the batch was never asked for once the bind finished", 1, NativeManager.requests);
+    }
+
     @Test public void concurrentTriggersReserveOnePendingRequest() {
         Anchor anchor = loadedAnchor("aid-pending", "cid-pending");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
+        bindCell(anchor);
 
         assertEquals(1, NativeManager.requests);
     }
@@ -192,9 +207,9 @@ public class CommentBatchTranslatorTest {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
             Future<?> firstRequest = executor.submit(() ->
-                    CommentBatchTranslator.registerCommentCell(new View(context), first));
+                    requestOffMain(first));
             Future<?> secondRequest = executor.submit(() ->
-                    CommentBatchTranslator.registerCommentCell(new View(context), second));
+                    requestOffMain(second));
             firstRequest.get(5, TimeUnit.SECONDS);
             secondRequest.get(5, TimeUnit.SECONDS);
         } finally {
@@ -220,42 +235,42 @@ public class CommentBatchTranslatorTest {
     @Test public void aThrownNativeRequestCanBeRetried() {
         Anchor anchor = loadedAnchor("aid-retry", "cid-retry");
         NativeManager.fail = true;
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
 
         NativeManager.fail = false;
         // Past the first backoff window. A throw used to be retried on the very next bind, which
         // is milliseconds later and hundreds of times over while a comment list scrolls.
         idleFor(2_100L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(2, NativeManager.requests);
     }
 
     @Test public void failedCompletionRetriesButSuccessfulCompletionStaysDeduplicated() {
         Anchor failed = loadedAnchor("aid-failed-completion", "cid-failed-completion");
-        CommentBatchTranslator.registerCommentCell(new View(context), failed);
+        bindCell(failed);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(null, failed.comment));
         idleFor(2_100L); // The first backoff window, which this test predates.
-        CommentBatchTranslator.registerCommentCell(new View(context), failed);
+        bindCell(failed);
         assertEquals(2, NativeManager.requests);
 
         Anchor successful = loadedAnchor("aid-success", "cid-success");
-        CommentBatchTranslator.registerCommentCell(new View(context), successful);
+        bindCell(successful);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(new Object(), successful.comment));
-        CommentBatchTranslator.registerCommentCell(new View(context), successful);
+        bindCell(successful);
         assertEquals(3, NativeManager.requests);
     }
 
     @Test public void expiredLoadedAndVisibleBatchesCanBeRequestedAgain() throws Exception {
         Anchor anchor = loadedAnchor("aid-expired", "cid-expired");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(new Object(), anchor.comment));
 
         invokePrune(SystemClock.elapsedRealtime() + 61_000L);
         assertEquals(0, loadedBatchCount());
         Anchor reloaded = loadedAnchor("aid-expired-reloaded", "cid-expired-reloaded");
-        CommentBatchTranslator.registerCommentCell(new View(context), reloaded);
+        bindCell(reloaded);
         assertEquals(2, NativeManager.requests);
     }
 
@@ -265,13 +280,13 @@ public class CommentBatchTranslatorTest {
         NativeManager.failFirst = true;
 
         Thread firstRequest = new Thread(() ->
-                CommentBatchTranslator.registerCommentCell(new View(context), anchor));
+                requestOffMain(anchor));
         firstRequest.start();
         assertTrue(NativeManager.firstStarted.await(5, TimeUnit.SECONDS));
 
         invokePrune(SystemClock.elapsedRealtime() + 16_000L);
         NativeManager.blockFirst = false;
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
 
         NativeManager.releaseFirst.countDown();
         firstRequest.join(5_000L);
@@ -284,13 +299,13 @@ public class CommentBatchTranslatorTest {
         NativeManager.blockFirst = true;
 
         Thread firstRequest = new Thread(() ->
-                CommentBatchTranslator.registerCommentCell(new View(context), anchor));
+                requestOffMain(anchor));
         firstRequest.start();
         assertTrue(NativeManager.firstStarted.await(5, TimeUnit.SECONDS));
 
         invokePrune(SystemClock.elapsedRealtime() + 16_000L);
         NativeManager.blockFirst = false;
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
 
         CommentBatchTranslator.onNativeBatchComplete(new Runner(new Object(), anchor.comment));
         assertEquals(1, pendingRequestCount());
@@ -301,32 +316,32 @@ public class CommentBatchTranslatorTest {
         CommentBatchTranslator.onNativeBatchComplete(new Runner(new Object(), anchor.comment));
         assertEquals(0, pendingRequestCount());
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(2, NativeManager.requests);
     }
 
     @Test public void twoFailuresInARowStopTheThirdRequestUntilTheBackoffIsOver() {
         Anchor anchor = loadedAnchor("aid-backoff", "cid-backoff");
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(null, anchor.comment));
 
         idleFor(2_100L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(2, NativeManager.requests);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(null, anchor.comment));
 
         // A comment list binds cells many times a second. None of these may reach the host.
         for (int bind = 0; bind < 20; bind++) {
             idleFor(100L);
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
         }
         assertEquals("the third try went out inside the eight second window",
                 2, NativeManager.requests);
 
         idleFor(6_500L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the third try never went out at all", 3, NativeManager.requests);
     }
 
@@ -342,13 +357,13 @@ public class CommentBatchTranslatorTest {
         Anchor anchor = loadedAnchor("aid-give-up", "cid-give-up");
         long[] waits = {2_100L, 8_500L, 30_500L};
         for (int attempt = 1; attempt <= 4; attempt++) {
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             assertEquals("try " + attempt + " never reached the host", attempt, NativeManager.requests);
             CommentBatchTranslator.onNativeBatchComplete(new Runner(null, anchor.comment));
             if (attempt < 4) idleFor(waits[attempt - 1]);
         }
         assertEquals("the batch aged out before the give-up could be seen", 1, loadedBatchCount());
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("a batch that failed four times is still being asked for",
                 4, NativeManager.requests);
     }
@@ -356,19 +371,19 @@ public class CommentBatchTranslatorTest {
     @Test public void theThirtySecondWindowIsRealRatherThanAdvertised() {
         Anchor anchor = loadedAnchor("aid-third-window", "cid-third-window");
         for (int attempt = 1; attempt <= 3; attempt++) {
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             assertEquals(attempt, NativeManager.requests);
             CommentBatchTranslator.onNativeBatchComplete(new Runner(null, anchor.comment));
             if (attempt < 3) idleFor(attempt == 1 ? 2_100L : 8_500L);
         }
 
         idleFor(20_000L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the fourth try went out inside the thirty second window",
                 3, NativeManager.requests);
 
         idleFor(11_000L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the fourth try never went out at all", 4, NativeManager.requests);
     }
 
@@ -382,7 +397,7 @@ public class CommentBatchTranslatorTest {
         Anchor anchor = new Anchor(all[0], new TranslationContext("aid-loop"));
 
         for (int bind = 0; bind < 12; bind++) {
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             CommentBatchTranslator.onNativeBatchComplete(
                     new Runner(Arrays.asList(all[0]), Arrays.asList(all)));
         }
@@ -402,7 +417,7 @@ public class CommentBatchTranslatorTest {
 
         // Three at a time, which is more rounds than the attempt cap allows for a failure.
         for (int round = 1; round <= 3; round++) {
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             assertEquals("round " + round + " was never dispatched", round, NativeManager.requests);
             List<Comment> translated = new ArrayList<>();
             for (int index = (round - 1) * 3; index < round * 3; index++) {
@@ -418,17 +433,17 @@ public class CommentBatchTranslatorTest {
 
     @Test public void aCommentListLoadingAgainAsksForItsBatchAgain() {
         Anchor anchor = loadedAnchor("aid-reload", "cid-reload");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
         CommentBatchTranslator.onNativeBatchComplete(new Runner(new Object(), anchor.comment));
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("a settled batch was asked for twice", 1, NativeManager.requests);
 
         // The same comments arriving again is a fresh ask, which is what the class claims by
         // saying a batch is left alone "until the list reloads".
         CommentBatchTranslator.onCommentListLoaded(new CommentItemList(anchor.comment));
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("reloading the comment list did not start the batch over",
                 2, NativeManager.requests);
     }
@@ -440,7 +455,7 @@ public class CommentBatchTranslatorTest {
         CommentBatchTranslator.onCommentListLoaded(new CommentItemList(first, second, third));
         Anchor anchor = new Anchor(first, new TranslationContext("aid-partial"));
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
 
         // One of the three came back translated. The batch used to be marked done on any answer
@@ -448,7 +463,7 @@ public class CommentBatchTranslatorTest {
         CommentBatchTranslator.onNativeBatchComplete(
                 new Runner(Arrays.asList(first), Arrays.asList(first, second, third)));
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("the two comments that came back untranslated were never asked for again",
                 2, NativeManager.requests);
         assertTrue("the second request did not carry the untranslated comments",
@@ -467,27 +482,27 @@ public class CommentBatchTranslatorTest {
         CommentBatchTranslator.onCommentListLoaded(new CommentItemList(first, second));
         Anchor anchor = new Anchor(first, new TranslationContext("aid-whole"));
 
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
         CommentBatchTranslator.onNativeBatchComplete(
                 new Runner(Arrays.asList(first, second), Arrays.asList(first, second)));
 
         idleFor(31_000L);
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals("a batch that came back complete was asked for a second time",
                 1, NativeManager.requests);
     }
 
     @Test public void aHostWithNoResultsFieldStandsTheFeatureDownInsteadOfRetrying() {
         Anchor anchor = loadedAnchor("aid-no-field", "cid-no-field");
-        CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+        bindCell(anchor);
         assertEquals(1, NativeManager.requests);
 
         CommentBatchTranslator.onNativeBatchComplete(new RunnerWithoutResults(anchor.comment));
 
         for (int bind = 0; bind < 5; bind++) {
             idleFor(31_000L);
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
         }
         assertEquals("a host with no results field was asked again anyway",
                 1, NativeManager.requests);
@@ -540,6 +555,24 @@ public class CommentBatchTranslatorTest {
     /** Robolectric advances SystemClock.elapsedRealtime as the paused looper is idled. */
     private static void idleFor(long millis) {
         Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis));
+    }
+
+    /** A row bind. The request it starts is posted, so it goes out once the bind has finished. */
+    private void bindCell(Object manager) {
+        CommentBatchTranslator.registerCommentCell(new View(context), manager);
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+    }
+
+    /** The request a loaded comment page starts, on whichever thread delivered the page. */
+    private static void requestOffMain(Anchor anchor) {
+        try {
+            java.lang.reflect.Method request = CommentBatchTranslator.class.getDeclaredMethod(
+                    "translateLoadedBatchIfReady", Object.class, boolean.class);
+            request.setAccessible(true);
+            request.invoke(null, anchor, false);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     private static Anchor loadedAnchor(String aid, String cid) {
@@ -659,6 +692,65 @@ public class CommentBatchTranslatorTest {
         assertEquals(0, ((String[]) callPrivate("getNativeDoNotTranslateLanguages")).length);
     }
 
+    @Test public void aRowReboundToAnotherCommentStopsHearingTheOneItShowed() {
+        // #383: TikTok moves a row's translation manager to the new comment's updates only on the
+        // bind's translation branch. A row reused for a picture comment kept hearing the comment
+        // it showed before, and that comment's translation landed in the picture comment's row.
+        ObservedManager manager = new ObservedManager(new Comment("aid-row", "cid-row-old"));
+        TranslationUpdates shown = ObservedTranslator.LIZIZ("cid-row-old");
+        shown.observers.add(manager);
+        CommentRow row = new CommentRow(new View(context), manager);
+
+        CommentBatchTranslator.releaseStaleObserver(row, new Comment("aid-row", "cid-row-new"), ObservedManager.class);
+
+        assertFalse("the row still hears the comment it showed before", shown.observers.contains(manager));
+    }
+
+    @Test public void aRowBoundToTheCommentItShowsKeepsHearingIt() {
+        ObservedManager manager = new ObservedManager(new Comment("aid-row", "cid-row-same"));
+        TranslationUpdates shown = ObservedTranslator.LIZIZ("cid-row-same");
+        shown.observers.add(manager);
+        CommentRow row = new CommentRow(new View(context), manager);
+
+        CommentBatchTranslator.releaseStaleObserver(row, new Comment("aid-row", "cid-row-same"), ObservedManager.class);
+
+        assertTrue("a rebind to the same comment stopped its translation", shown.observers.contains(manager));
+    }
+
+    @Test public void aWriteStartedForTheOldCommentNeverLandsInTheReusedRow() {
+        // #383: TikTok writes an update's text when a 100 ms fade ends, and a bind never stopped
+        // the fade the row's last writer had going, so the old comment's text landed in the row
+        // after it began showing the new one.
+        android.widget.TextView text = new android.widget.TextView(context);
+        text.setText("new comment");
+        ObservedManager manager = new ObservedManager(new Comment("aid-row", "cid-row-faded"));
+        RowWriter writer = new RowWriter(text);
+        manager.writer = writer;
+        writer.write("old comment");
+        CommentRow row = new CommentRow(new View(context), manager);
+
+        CommentBatchTranslator.releaseStaleObserver(row, new Comment("aid-row", "cid-row-next"), ObservedManager.class);
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));
+
+        assertEquals("the old comment's text landed in the reused row", "new comment", text.getText().toString());
+    }
+
+    @Test public void aWriteForTheCommentTheRowStillShowsLands() {
+        // The positive control: without it the test above would pass against a fade that never runs.
+        android.widget.TextView text = new android.widget.TextView(context);
+        text.setText("original");
+        ObservedManager manager = new ObservedManager(new Comment("aid-row", "cid-row-kept"));
+        RowWriter writer = new RowWriter(text);
+        manager.writer = writer;
+        writer.write("translated");
+        CommentRow row = new CommentRow(new View(context), manager);
+
+        CommentBatchTranslator.releaseStaleObserver(row, new Comment("aid-row", "cid-row-kept"), ObservedManager.class);
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));
+
+        assertEquals("translated", text.getText().toString());
+    }
+
     private static void clearTranslatorState() throws Exception {
         Field lockField = CommentBatchTranslator.class.getDeclaredField("LOCK");
         lockField.setAccessible(true);
@@ -738,8 +830,8 @@ public class CommentBatchTranslatorTest {
             // The cell manager: nothing on it looks like a comment beside a native translator.
             // Twice, which is what a build without the members does on every bind: one miss is
             // a cell that arrived before its manager was filled in.
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+            bindCell(new StrangeManager());
+            bindCell(new StrangeManager());
             // The loaded list: no items field at all.
             CommentBatchTranslator.onCommentListLoaded(new ListWithoutItems());
             // The completion runner: the results field is gone.
@@ -772,12 +864,12 @@ public class CommentBatchTranslatorTest {
     @Test public void oneStrayCellIsNotEnoughToCallTheBuildBroken() {
         HookStatus.clear();
         try {
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+            bindCell(new StrangeManager());
             assertEquals("one miss was reported as a broken build: "
                     + HookStatus.missing("comment translation"),
                     0, HookStatus.missing("comment translation").size());
 
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+            bindCell(new StrangeManager());
             assertEquals("a second miss on the same class said nothing", 1,
                     HookStatus.missing("comment translation").size());
         } finally {
@@ -790,10 +882,10 @@ public class CommentBatchTranslatorTest {
         HookStatus.clear();
         try {
             Anchor working = anchor("aid-mixed", "cid-mixed");
-            CommentBatchTranslator.registerCommentCell(new View(context), working);
+            bindCell(working);
             Shadows.shadowOf(Looper.getMainLooper()).idle();
             for (int at = 0; at < 2; at++) {
-                CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+                bindCell(new StrangeManager());
             }
 
             List<String> missing = HookStatus.missing("comment translation");
@@ -813,7 +905,7 @@ public class CommentBatchTranslatorTest {
         HookStatus.clear();
         try {
             for (int at = 0; at < 2; at++) {
-                CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+                bindCell(new StrangeManager());
             }
             assertEquals(1, HookStatus.missing("comment translation").size());
 
@@ -821,7 +913,7 @@ public class CommentBatchTranslatorTest {
             assertEquals("the clear did not empty the row", 0,
                     HookStatus.missing("comment translation").size());
 
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+            bindCell(new StrangeManager());
             assertEquals("a build that is still broken went quiet after a clear", 1,
                     HookStatus.missing("comment translation").size());
         } finally {
@@ -840,9 +932,9 @@ public class CommentBatchTranslatorTest {
         HookStatus.clear();
         try {
             Anchor anchor = anchor("aid-race", "cid-race");
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             Shadows.shadowOf(Looper.getMainLooper()).idle();
-            CommentBatchTranslator.registerCommentCell(new View(context), new StrangeManager());
+            bindCell(new StrangeManager());
 
             assertEquals("a stray cell was reported as a broken build: "
                     + HookStatus.missing("comment translation"),
@@ -891,7 +983,7 @@ public class CommentBatchTranslatorTest {
         try {
             Anchor anchor = anchor("aid-bound", "cid-bound");
             CommentBatchTranslator.onCommentListLoaded(new CommentItemList(anchor.comment));
-            CommentBatchTranslator.registerCommentCell(new View(context), anchor);
+            bindCell(anchor);
             Shadows.shadowOf(Looper.getMainLooper()).idle();
             CommentBatchTranslator.onNativeBatchStart(
                     Arrays.asList(anchor.comment), anchor.context, false);
@@ -951,6 +1043,95 @@ public class CommentBatchTranslatorTest {
         Anchor(Comment comment, TranslationContext context) {
             this.comment = comment;
             this.context = context;
+        }
+    }
+
+    /** Stands in for androidx's Observer, which TikTok's translation manager implements. */
+    public interface Observer {}
+
+    /** Stands in for the NextLiveData that carries one comment's translation updates. */
+    public static final class TranslationUpdates {
+        final List<Object> observers = new ArrayList<>();
+
+        public void removeObserver(Observer observer) { observers.remove(observer); }
+    }
+
+    /** The native translator as 47.7.3 has it: the batch call and a per-comment updates lookup. */
+    public static final class ObservedTranslator {
+        static final Map<String, TranslationUpdates> UPDATES = new HashMap<>();
+
+        public static void LJ(List<Object> comments, TranslationContext context, boolean force) {}
+
+        /** The lambda compiles to a second static method from a String to the updates, as D8 leaves them. */
+        public static TranslationUpdates LIZIZ(String cid) {
+            return UPDATES.computeIfAbsent(cid, key -> new TranslationUpdates());
+        }
+    }
+
+    /** The type the row's state holder declares for its manager. */
+    public abstract static class TranslationManagerBase {}
+
+    /** Stands in for the interface 47.7.3's manager declares its row writer under. */
+    public interface Writer {}
+
+    /**
+     * The row's text writer as 47.7.3 has it: an update's text goes in when a 100 ms fade-out
+     * ends, and the set's cancel listener takes the listeners off its fades, so a cancel drops it.
+     */
+    public static final class RowWriter implements Writer {
+        final android.widget.TextView text;
+        android.animation.AnimatorSet fade;
+
+        RowWriter(android.widget.TextView text) {
+            this.text = text;
+        }
+
+        void write(CharSequence translated) {
+            android.animation.ValueAnimator out = android.animation.ValueAnimator.ofFloat(1f, 0f).setDuration(100);
+            out.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override public void onAnimationEnd(android.animation.Animator animation) {
+                    text.setText(translated);
+                }
+            });
+            android.animation.ValueAnimator in = android.animation.ValueAnimator.ofFloat(0f, 1f).setDuration(100);
+            android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+            set.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override public void onAnimationCancel(android.animation.Animator animation) {
+                    for (android.animation.Animator child : set.getChildAnimations()) child.removeAllListeners();
+                }
+            });
+            set.playSequentially(out, in);
+            fade = set;
+            set.start();
+        }
+    }
+
+    /** The row's translation manager, which observes the updates of the comment it shows. */
+    public static final class ObservedManager extends TranslationManagerBase implements Observer {
+        public final Comment comment;
+        public final TranslationContext context;
+        public final ObservedTranslator translator = new ObservedTranslator();
+        Writer writer;
+
+        ObservedManager(Comment comment) {
+            this.comment = comment;
+            this.context = new TranslationContext(comment.getAid());
+        }
+    }
+
+    public static final class RowState {
+        String label = "row";
+        TranslationManagerBase translation;
+    }
+
+    /** A comment row that keeps its manager on a state holder, the way 47.7.3's cell does. */
+    public static final class CommentRow {
+        final View itemView;
+        final RowState state = new RowState();
+
+        CommentRow(View itemView, TranslationManagerBase manager) {
+            this.itemView = itemView;
+            state.translation = manager;
         }
     }
 

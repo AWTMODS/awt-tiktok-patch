@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.preference.PreferenceScreen;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -18,6 +19,7 @@ import app.morphe.extension.shared.settings.PausedProcess;
 import app.morphe.extension.tiktok.blockauthor.FeedVisibility;
 import app.morphe.extension.tiktok.settings.Settings;
 import app.morphe.extension.tiktok.settings.SettingsStatus;
+import app.morphe.extension.tiktok.settings.preference.categories.FeedFilterPreferenceCategory;
 
 import org.junit.After;
 import org.junit.Before;
@@ -70,6 +72,7 @@ public class ProfileTabWatchHistoryTest {
         FeedVisibility.resolveForTests(activity.getPackageName(), "47.7.3:oph", 0);
         ReflectionHelpers.setStaticField(SettingsStatus.class, "feedNavigationEnabled", false);
         Settings.PROFILE_TAB_OPENS_WATCH_HISTORY.resetToDefault();
+        Settings.PROFILE_TAB_SWITCHES_ACCOUNTS.resetToDefault();
         Settings.LOCAL_WATCH_HISTORY.resetToDefault();
         Settings.PROFILE_HOLD_OPENS_LOCAL_WATCH_HISTORY.resetToDefault();
         AlertDialog shown = ShadowAlertDialog.getLatestAlertDialog();
@@ -122,6 +125,30 @@ public class ProfileTabWatchHistoryTest {
         assertFalse(ProfileTabWatchHistory.takesSwitcherPress(ProfileTabWatchHistory.PROFILE_TAG));
         assertNull(nextStarted());
         assertNull(ShadowAlertDialog.getLatestAlertDialog());
+    }
+
+    /** The hold is the feed tab patch's, so a bundle without it doesn't offer a switch that does nothing. */
+    @Test public void theLocalSwitchIsOfferedOnlyWithTheFeedTabPatch() {
+        boolean oldSeen = SettingsStatus.seenVideoFilterEnabled;
+        boolean oldBlock = SettingsStatus.blockAuthorEnabled;
+        SettingsStatus.seenVideoFilterEnabled = true;
+        SettingsStatus.blockAuthorEnabled = true;
+        try (var host = Robolectric.buildActivity(
+                app.morphe.extension.tiktok.interaction.GestureActionsTest.TestActivity.class).setup()) {
+            PreferenceScreen with = host.get().getPreferenceManager().createPreferenceScreen(host.get());
+            new FeedFilterPreferenceCategory(host.get(), with);
+            assertNotNull(with.findPreference(Settings.PROFILE_HOLD_OPENS_LOCAL_WATCH_HISTORY.key));
+
+            ReflectionHelpers.setStaticField(SettingsStatus.class, "feedNavigationEnabled", false);
+            PreferenceScreen without = host.get().getPreferenceManager().createPreferenceScreen(host.get());
+            new FeedFilterPreferenceCategory(host.get(), without);
+            assertNull(without.findPreference(Settings.PROFILE_HOLD_OPENS_LOCAL_WATCH_HISTORY.key));
+            assertNotNull("For You's hold is in every bundle",
+                    without.findPreference(Settings.FOR_YOU_HOLD_OPENS_WATCH_HISTORY.key));
+        } finally {
+            SettingsStatus.seenVideoFilterEnabled = oldSeen;
+            SettingsStatus.blockAuthorEnabled = oldBlock;
+        }
     }
 
     @Test public void aLongPressOnProfileOpensWatchHistory() {
@@ -311,6 +338,42 @@ public class ProfileTabWatchHistoryTest {
         assertFalse(profile.isLongClickable());
         assertFalse("paused, TikTok's account switcher was skipped",
                 ProfileTabWatchHistory.takesSwitcherPress(ProfileTabWatchHistory.PROFILE_TAG));
+        assertNull(nextStarted());
+    }
+
+    /**
+     * #388: TikTok's switch_account_gesture experiment says no on some accounts, so the tab never
+     * gets TikTok's hold. The switch answers yes; off or paused, TikTok's own answer stands.
+     */
+    @Test public void theSwitchTurnsOnTikToksSwitcherHoldAndLeavesItsYesAlone() {
+        assertFalse("off, TikTok's no was changed", ProfileTabWatchHistory.switcherGesture(false));
+        assertTrue("off, TikTok's yes was taken away", ProfileTabWatchHistory.switcherGesture(true));
+
+        Settings.PROFILE_TAB_SWITCHES_ACCOUNTS.save(true);
+        assertTrue("on, TikTok's switcher hold stayed off", ProfileTabWatchHistory.switcherGesture(false));
+        assertTrue(ProfileTabWatchHistory.switcherGesture(true));
+
+        PausedProcess.set(true);
+        assertFalse("paused, the switcher hold was still forced on", ProfileTabWatchHistory.switcherGesture(false));
+        assertTrue(ProfileTabWatchHistory.switcherGesture(true));
+    }
+
+    /** With both switches on, the hold TikTok now puts on Profile opens Watch history, not the sheet. */
+    @Test public void watchHistoryStillTakesTheSwitcherHoldItTurnedOn() {
+        Settings.PROFILE_TAB_SWITCHES_ACCOUNTS.save(true);
+        Settings.PROFILE_TAB_OPENS_WATCH_HISTORY.save(true);
+        AtomicInteger sheets = new AtomicInteger();
+        if (ProfileTabWatchHistory.switcherGesture(false)) profile.setOnLongClickListener(switcher(sheets));
+        installAndResume();
+
+        assertTrue(profile.performLongClick());
+        assertNotNull("the hold didn't open Watch history", nextStarted());
+        assertEquals("the account sheet showed too", 0, sheets.get());
+
+        Settings.PROFILE_TAB_OPENS_WATCH_HISTORY.save(false);
+        layoutPass();
+        assertTrue(profile.performLongClick());
+        assertEquals("with Watch history off, the hold didn't show the account sheet", 1, sheets.get());
         assertNull(nextStarted());
     }
 

@@ -12,6 +12,7 @@ import android.text.format.Formatter;
 
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.tiktok.offline.CustomOfflineVideosLimitPatch;
+import app.morphe.extension.tiktok.offline.OfflineWatchedDelete;
 import app.morphe.extension.tiktok.settings.L10n;
 import app.morphe.extension.tiktok.settings.Settings;
 import app.morphe.extension.tiktok.settings.SettingsStatus;
@@ -154,6 +155,11 @@ public class DownloadsPreferenceCategory extends ConditionalPreferenceCategory {
             addPreference(new ChoicePreference(context, "Video download quality", Settings.DOWNLOAD_VIDEO_QUALITY,
                     new String[]{"Automatic", "Highest", "Lowest", "1080p", "720p", "540p", "480p", "360p"},
                     new String[]{"auto", "highest", "lowest", "1080", "720", "540", "480", "360"}));
+            addPreference(new ChoicePreference(context, "Video download codec", Settings.DOWNLOAD_VIDEO_CODEC,
+                    new String[]{"Automatic", "HEVC first", "H.264 only"},
+                    new String[]{"auto", "hevc", "h264"})
+                    .withNote("At the same quality, Automatic saves H.264, which nearly every player opens. "
+                            + "HEVC is often sharper, but some older players and TVs can't play it."));
             addPreference(new TogglePreference(context, "Ask for the quality on each save",
                     "Download lists the qualities this video comes in, with the size TikTok gives for each, and saves the one you pick. The quality above stays as it is for the next save.",
                     Settings.DOWNLOAD_ASK_QUALITY));
@@ -261,6 +267,9 @@ public class DownloadsPreferenceCategory extends ConditionalPreferenceCategory {
                     "Puts a save button in the sheet a story's Share button opens. It saves the story "
                             + "you're watching, and holding a story still pauses it.",
                     Settings.SAVE_STORY_FROM_SHARE));
+            addPreference(new TogglePreference(context, "Pick which stories to save",
+                    "When someone has more than one story, saving asks which ones to keep. The story "
+                            + "you're watching is already checked.", Settings.SAVE_STORY_PICK));
         }
         if (SettingsStatus.subtitleToolsEnabled) {
             addPreference(new SectionHeadingPreference(context, "Subtitles"));
@@ -325,6 +334,24 @@ public class DownloadsPreferenceCategory extends ConditionalPreferenceCategory {
                                 + "phone is low on space.",
                         Settings.KEEP_OFFLINE_VIDEOS
                 ));
+            }
+            if (SettingsStatus.offlineWatchedDeleteEnabled) {
+                TogglePreference deleteWatched = new TogglePreference(
+                        context,
+                        "Delete watched offline videos",
+                        "Each time TikTok starts, deletes the offline videos you've already "
+                                + "watched, so the next download fills their places with new ones. "
+                                + "A video counts as watched once it's been on screen.",
+                        Settings.DELETE_WATCHED_OFFLINE_VIDEOS
+                );
+                addPreference(deleteWatched);
+                // The count is a query on TikTok's database, which refuses the main thread.
+                Utils.runOnBackgroundThread(() -> {
+                    Integer left = OfflineWatchedDelete.unwatchedCountOrNull();
+                    if (left == null) return;
+                    Utils.runOnMainThread(() -> deleteWatched.showExtraLine(L10n.quantity(context, left,
+                            "1 unwatched offline video left", "%1$d unwatched offline videos left")));
+                });
             }
         }
     }

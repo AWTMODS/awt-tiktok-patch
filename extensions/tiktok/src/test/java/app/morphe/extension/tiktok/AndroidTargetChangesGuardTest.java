@@ -100,10 +100,11 @@ public class AndroidTargetChangesGuardTest {
             new ReviewedWrites("feed/SensitiveWarnings.java", 2,
                     "safe: writes the mask and the Aweme the host handed it, and already catches "
                             + "a refusal and reports it as a diagnostic row"),
-            new ReviewedWrites("feed/GridSort.java", 1,
+            new ReviewedWrites("feed/GridSort.java", 2,
                     "safe: writes mmItems on the profile grid adapter the hook was given, an "
                             + "instance field, with a sorted copy of the list TikTok last handed "
-                            + "that adapter"),
+                            + "that adapter, both when the order changes and when reshow() narrows "
+                            + "it to a grid search"),
             new ReviewedWrites("feedfilter/FeedItemsFilter.java", 3,
                     "safe: writes the search results' mItems, friendFeedData and, since #12, the "
                             + "Following feed's items field (mItems up to 46.8.3, items from "
@@ -118,15 +119,21 @@ public class AndroidTargetChangesGuardTest {
             new ReviewedWrites("navigation/DiscoverTab.java", 2,
                     "safe: writes bottomTab on the tab layout TikTok parsed and handed the hook, "
                             + "and bottomTabKey on a bottom tab this class just built; findField() "
-                            + "skips a static field"));
+                            + "skips a static field"),
+            new ReviewedWrites("privacy/AppLock.java", 1,
+                    "safe: writes mViews on the WindowManagerGlobal instance getInstance() "
+                            + "returned, an instance field, with a list holding the same windows; "
+                            + "a refusal is caught and App lock finds the windows on its own passes"));
 
     /**
      * Addresses written into the payload, and what is done with them.
      *
-     * <p>Nothing here is fetched. Every URL the transport opens arrives from TikTok's own model
-     * objects, is required to be https, and is re-resolved and re-checked on every redirect hop,
-     * so there is no host list in this repository to opt out of Certificate Transparency even if
-     * one were wanted. A CT refusal arrives as an SSLHandshakeException, which is not in
+     * <p>Two are fetched: the opt-in update check's api.github.com address (#377) and Spotify's
+     * sign-in page (SpotifyWebLogin, in a WebView), whose public certificates are logged like any
+     * public CA's, so neither needs a Certificate Transparency opt-out. Every URL the media transport opens arrives from TikTok's own model objects, is
+     * required to be https, and is re-resolved and re-checked on every redirect hop, so there is
+     * no host list in this repository to opt out of Certificate Transparency even if one were
+     * wanted. A CT refusal arrives as an SSLHandshakeException, which is not in
      * MediaBudget.isRetryableTransport, so it is not retried, and RemoteMedia names the exception
      * class in the message a reader sees.
      */
@@ -166,6 +173,19 @@ public class AndroidTargetChangesGuardTest {
                         + "still fits once GitHub's sign-in page wraps it");
         REVIEWED_ADDRESSES.put("https://ko-fi.com/X8K126YVER",
                 "not fetched: the Support Adrmodtt row, opened in the reader's browser");
+        REVIEWED_ADDRESSES.put("https://api.github.com/repos/SysAdminDoc/AdrModTT/releases/latest",
+                "fetched: the update check, only with Check for Adrmodtt updates on, at most "
+                        + "once a day, one GET with no redirect followed; GitHub's certificates "
+                        + "are publicly logged, so CT enforcement passes it (#377)");
+        REVIEWED_ADDRESSES.put("https://accounts.spotify.com/authorize",
+                "fetched: Spotify's sign-in page, in a WebView, only when TikTok hands its "
+                        + "Spotify sign-in to the Spotify app, which turns a patched TikTok down; "
+                        + "it carries the client id, scopes and redirect from TikTok's own request, "
+                        + "and the WebView stops at the www.tiktok.com redirect. Spotify's "
+                        + "certificates are publicly logged, so CT enforcement passes it");
+        REVIEWED_ADDRESSES.put("https://github.com/SysAdminDoc/AdrModTT/releases/tag/",
+                "not fetched: the update card's release page, opened in the reader's browser "
+                        + "when Morphe Manager isn't installed");
         REVIEWED_ADDRESSES.put("https://(?:(?:vm|vt)\\\\.tiktok\\\\.com/[A-Za-z0-9]+|(?:www\\\\.|m\\\\.)?"
                         + "tiktok\\\\.com/t/[A-Za-z0-9]{4,20})/?",
                 "not a host: the pattern that finds a TikTok short link in copied text. The "
@@ -219,7 +239,8 @@ public class AndroidTargetChangesGuardTest {
         // Nine on 2026-09-19; four comment-menu instance writes were added for #169, and two
         // LIVE profile card label writes for #159, and the grid sort chip's re-sort for #180.
         // Four LIVE Audio only row writes for #265 on 2026-11-05, two Discover tab writes for #98.
-        assertEquals("the audit counted twenty-two reflective writes on 2026-11-07", 22, total);
+        // The grid search's reshow on 2026-11-10, App lock's watched window list on 2026-11-12.
+        assertEquals("the audit counted twenty-four reflective writes on 2026-11-12", 24, total);
     }
 
     @Test
@@ -241,9 +262,10 @@ public class AndroidTargetChangesGuardTest {
         // Both directions. Asserting only that nothing unreviewed turned up would pass just as
         // happily if the scan found nothing at all, which is what a broken pattern looks like.
         assertEquals("the addresses written into the payload are not the ones that were read "
-                        + "against Certificate Transparency. Nothing here fetches a hardcoded host "
-                        + "today: every URL the transport opens comes from TikTok's own model "
-                        + "objects. The bundle ships no resources either, so a host that needed a "
+                        + "against Certificate Transparency. The only hardcoded hosts fetched are "
+                        + "the opt-in update check's api.github.com and Spotify's sign-in page in "
+                        + "a WebView; every URL the media transport "
+                        + "opens comes from TikTok's own model objects. The bundle ships no resources either, so a host that needed a "
                         + "network security config opt-out would have nowhere to be opted out. "
                         + "Verdicts on the reviewed ones: " + REVIEWED_ADDRESSES,
                 new TreeSet<>(REVIEWED_ADDRESSES.keySet()), new TreeSet<>(found));

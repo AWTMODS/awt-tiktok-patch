@@ -96,6 +96,9 @@ public class FoldableSplitViewTest {
         boolean metricsUnavailable;
         int metricsReads;
         int metricsAllowed = Integer.MAX_VALUE;
+        int windowDp = 620;
+        /** A navigation bar down the right side, inside the window's bounds. */
+        int barDp;
         @Override public android.view.WindowManager getWindowManager() {
             android.view.WindowManager original = super.getWindowManager();
             return (android.view.WindowManager) java.lang.reflect.Proxy.newProxyInstance(
@@ -105,23 +108,27 @@ public class FoldableSplitViewTest {
                             if (++metricsReads > metricsAllowed || metricsUnavailable) {
                                 throw new IllegalStateException("window metrics unavailable");
                             }
-                            int width = Math.round(620 * getResources().getDisplayMetrics().density);
+                            float density = getResources().getDisplayMetrics().density;
+                            int width = Math.round(windowDp * density);
                             return new android.view.WindowMetrics(new android.graphics.Rect(0, 0, width, width),
-                                    new android.view.WindowInsets.Builder().build());
+                                    new android.view.WindowInsets.Builder().setInsetsIgnoringVisibility(
+                                            android.view.WindowInsets.Type.systemBars(),
+                                            android.graphics.Insets.of(0, 0, Math.round(barDp * density), 0)).build());
                         }
                         return method.invoke(original, arguments);
                     });
         }
     }
 
-    /** Window bounds include bars that the available configuration width excludes on API 30. */
+    /** Window bounds include bars that the configuration width leaves out on API 30, so they come off. */
     @Test @Config(sdk = 30, qualifiers = "w599dp-h900dp")
-    public void theContainerAndLiveCheckUseTheSameAvailableConfigurationWidth() {
+    public void theWindowWidthLeavesOutTheBarsLikeTheConfigurationWidth() {
         Settings.FOLDABLE_SPLIT_VIEW.save(true);
         java.util.List<android.app.Activity> rebuilt = new java.util.ArrayList<>();
         FoldableSplitView.recreator = rebuilt::add;
         try (var owner = Robolectric.buildActivity(InsetBoundsActivity.class).setup()) {
             InsetBoundsActivity activity = owner.get();
+            activity.barDp = 21;
             Utils.setActivity(activity);
             Configuration configuration = new Configuration(activity.getResources().getConfiguration());
             assertEquals(599, configuration.screenWidthDp);
@@ -210,6 +217,44 @@ public class FoldableSplitViewTest {
             } finally {
                 activity.getResources().getConfiguration().setTo(original);
             }
+        }
+    }
+
+    /**
+     * TikTok keeps the width its process started with in the configuration its activities
+     * report, so the activity built again for a wider window still said 384 dp, the container
+     * check said no, and comments opened over the video (#398). The window says what it is.
+     */
+    @Test @Config(sdk = 30, qualifiers = "w384dp-h823dp")
+    public void theFeedBuiltAgainForAWiderWindowGetsTheSplitContainer() {
+        Settings.FOLDABLE_SPLIT_VIEW.save(true);
+        java.util.List<android.app.Activity> rebuilt = new java.util.ArrayList<>();
+        FoldableSplitView.recreator = rebuilt::add;
+        try (var owner = Robolectric.buildActivity(InsetBoundsActivity.class).setup()) {
+            InsetBoundsActivity activity = owner.get();
+            Utils.setActivity(activity);
+            activity.windowDp = 711;
+            assertEquals(384, activity.getResources().getConfiguration().screenWidthDp);
+            assertTrue(FoldableSplitView.shouldForceContainer());
+            assertTrue("the container splits when TikTok asks without a configuration",
+                    FoldableSplitView.shouldForce(activity, null));
+            // Recorded wide, so the next fold is a crossing.
+            FoldableSplitView.onConfigurationChanged(activity, width(activity, 384));
+            assertEquals(java.util.Collections.singletonList(activity), rebuilt);
+        }
+    }
+
+    /** The other way round: started unfolded, the activity built again for the folded window. */
+    @Test @Config(sdk = 30, qualifiers = "w711dp-h823dp")
+    public void theFeedBuiltAgainForANarrowerWindowKeepsCommentsOverTheVideo() {
+        Settings.FOLDABLE_SPLIT_VIEW.save(true);
+        try (var owner = Robolectric.buildActivity(InsetBoundsActivity.class).setup()) {
+            InsetBoundsActivity activity = owner.get();
+            Utils.setActivity(activity);
+            activity.windowDp = 384;
+            assertEquals(711, activity.getResources().getConfiguration().screenWidthDp);
+            assertFalse(FoldableSplitView.shouldForceContainer());
+            assertFalse(FoldableSplitView.shouldForce(activity, null));
         }
     }
 
@@ -395,6 +440,61 @@ public class FoldableSplitViewTest {
             assertFalse(FoldableSplitView.shouldForce(activity, configuration));
         }
     }
+    /** Puts a window mode on a configuration the way the system does, through the framework's own setter. */
+    private static void windowingMode(Configuration configuration, String setter, int mode) throws Exception {
+        Object window = Configuration.class.getField("windowConfiguration").get(configuration);
+        window.getClass().getMethod(setter, int.class).invoke(window, mode);
+    }
+
+    private static final int FULLSCREEN = 1, SPLIT_SCREEN_PRIMARY = 3, FREEFORM = 5;
+
+    @Test public void onlyAFreeformWindowIsADesktopWindow() throws Exception {
+        Configuration configuration = new Configuration();
+        assertFalse(FoldableSplitView.isDesktopWindow(configuration));
+        windowingMode(configuration, "setWindowingMode", FREEFORM);
+        assertTrue(FoldableSplitView.isDesktopWindow(configuration));
+        windowingMode(configuration, "setWindowingMode", SPLIT_SCREEN_PRIMARY);
+        assertFalse(FoldableSplitView.isDesktopWindow(configuration));
+        windowingMode(configuration, "setWindowingMode", FULLSCREEN);
+        assertFalse(FoldableSplitView.isDesktopWindow(configuration));
+        assertFalse(FoldableSplitView.isDesktopWindow(null));
+        // A full-screen app on a desktop display carries the display's freeform beside its own mode.
+        Object window = Configuration.class.getField("windowConfiguration").get(configuration);
+        boolean displayMode = java.util.Arrays.stream(window.getClass().getMethods())
+                .anyMatch(method -> method.getName().equals("setDisplayWindowingMode"));
+        if (displayMode) {
+            windowingMode(configuration, "setDisplayWindowingMode", FREEFORM);
+            assertTrue(configuration.toString().contains("mDisplayWindowingMode=freeform"));
+            assertFalse(FoldableSplitView.isDesktopWindow(configuration));
+        }
+    }
+
+    @Test public void aDesktopWindowSplitsByItsWidthAndIsBuiltAgainWhenResizedAcross() throws Exception {
+        Settings.FOLDABLE_SPLIT_VIEW.save(true);
+        java.util.List<android.app.Activity> rebuilt = new java.util.ArrayList<>();
+        FoldableSplitView.recreator = rebuilt::add;
+        try (var owner = Robolectric.buildActivity(TestActivity.class).setup()) {
+            TestActivity activity = owner.get();
+            Utils.setActivity(activity);
+            // A Googlebook's TikTok window reports multi-window like split screen does (#405).
+            activity.multiWindow = true;
+            assertFalse(FoldableSplitView.shouldForce(activity, width(activity, 900)));
+
+            windowingMode(activity.getResources().getConfiguration(), "setWindowingMode", FREEFORM);
+            assertTrue(FoldableSplitView.shouldForce(activity, width(activity, 900)));
+            assertFalse(FoldableSplitView.shouldForce(activity, width(activity, 599)));
+            assertTrue(FoldableSplitView.shouldForceContainer());
+
+            // Dragged narrower than the threshold, the feed is built again for comments over the video.
+            FoldableSplitView.onConfigurationChanged(activity, width(activity, 380));
+            assertEquals(java.util.Collections.singletonList(activity), rebuilt);
+
+            // Picture in picture still leaves the comments to TikTok, desktop window or not.
+            activity.pictureInPicture = true;
+            assertFalse(FoldableSplitView.shouldForce(activity, width(activity, 900)));
+        }
+    }
+
     @Test public void containerUsesCurrentActivityAndNeverRecreatesIt() {
         Settings.FOLDABLE_SPLIT_VIEW.save(true);
         assertFalse(FoldableSplitView.shouldForceContainer());

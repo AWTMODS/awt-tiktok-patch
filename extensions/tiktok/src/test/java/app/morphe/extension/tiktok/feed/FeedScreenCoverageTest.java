@@ -153,6 +153,8 @@ public class FeedScreenCoverageTest {
                 "block_sound_button", "not_interested_button", "feed_mute_button", "download_button"}) {
             put(button, YES, YES, NONE);
         }
+        // The chooser after a Not interested tap, so it reaches where that button does.
+        put("not_interested_also_filter", YES, YES, NONE);
 
         // Video info. The text sizes, the date and the creator row hook TikTok's own owners,
         // which both windows share.
@@ -174,6 +176,9 @@ public class FeedScreenCoverageTest {
         put("sound_grid_sort", NONE, NONE, NONE);
         // Where the Liked grid's list starts, which neither window draws (#350).
         put("liked_jump_to_date", NONE, NONE, NONE);
+        put("grid_search", NONE, NONE, NONE);
+        // Controls over the profile, Liked and sound grids, which neither window draws (#378).
+        put("grid_position_controls", NONE, NONE, NONE);
         put("show_author_region", YES, YES, NONE);
         // Only how the region label shows its code, so it reaches where the label does (#157).
         put("region_as_flag", YES, YES, NONE);
@@ -201,6 +206,8 @@ public class FeedScreenCoverageTest {
         // All and Create sit in the Following row (and the Inbox's, which is no video window).
         put("hide_following_all_button", YES, NONE, NONE);
         put("hide_story_create", YES, NONE, NONE);
+        // The Stories pill is the Following tab's, found by the main feed's overlay pass (#409).
+        put("glass_stories_pill", YES, NONE, NONE);
         // The chip is a cell component, and the feed and the detail pager build the same cell (#319).
         put("hide_repost_chip", YES, YES, NONE);
         put("hide_visual_search", YES, YES, NONE);
@@ -277,8 +284,9 @@ public class FeedScreenCoverageTest {
         put("glass_tab_slide", YES, NONE, NONE);
         put("glass_haptics", YES, NONE, NONE);
         put("glass_haptic_style", YES, NONE, NONE);
-        // The main feed only: an opened video keeps the strip under its own top bar (#145).
-        put("see_through_status_bar", YES, NONE, NONE);
+        // An opened video keeps the feed's status bar spacer, so it goes under the bar too (#407).
+        put("see_through_status_bar", YES, YES, NONE);
+        put("status_bar_shade", YES, YES, NONE);
         // The guard runs with the overlay pass, which walks both windows and no LIVE room.
         put("burn_in_guard", YES, YES, NONE);
 

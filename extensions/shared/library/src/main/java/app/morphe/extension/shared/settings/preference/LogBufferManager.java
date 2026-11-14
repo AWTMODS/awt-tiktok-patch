@@ -46,6 +46,7 @@ import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.DiagnosticEvent;
 import app.morphe.extension.shared.diagnostics.DiagnosticRedactor;
 import app.morphe.extension.shared.diagnostics.BuildDetails;
+import app.morphe.extension.shared.diagnostics.OtherBundles;
 import app.morphe.extension.shared.settings.BaseSettings;
 import app.morphe.extension.shared.settings.AdrmodttPause;
 
@@ -166,15 +167,18 @@ public final class LogBufferManager {
 
     public static void exportToClipboard() {
         try {
-            String exportText = buildExportText();
+            String exportText = buildExportText(CLIPBOARD_MAX_CHARS);
             if (exportText.isEmpty()) {
                 Utils.showToastShort(say(nothingToExportMessage, "No matching diagnostics found."));
                 return;
             }
+            // Only when the sections around the events are over the limit on their own.
             if (exportText.length() > CLIPBOARD_MAX_CHARS) {
-                exportText = "MORPHE DIAGNOSTIC REPORT\n"
-                        + "clipboard_note: older content omitted; use Save full report for everything\n\n"
-                        + exportText.substring(exportText.length() - CLIPBOARD_MAX_CHARS);
+                String head = "MORPHE DIAGNOSTIC REPORT\n"
+                        + "clipboard_note: older content omitted; use Save full report for everything\n\n";
+                // The head counts toward the limit too.
+                exportText = head + exportText.substring(
+                        exportText.length() - (CLIPBOARD_MAX_CHARS - head.length()));
             }
             Utils.setClipboard(exportText);
             Utils.showToastShort(say(copiedMessage, "Diagnostic report copied to the clipboard."));
@@ -335,7 +339,21 @@ public final class LogBufferManager {
         REPORT_SECTIONS.clear();
     }
 
+    /** Whether the reader's choice in "Included diagnostics" puts this category in a report. */
+    static boolean includes(app.morphe.extension.shared.diagnostics.DiagnosticCategory category) {
+        Set<String> selected = LogExportFilterPreference.parse(BaseSettings.DEBUG_LOG_FILTERS.get());
+        return selected.isEmpty() || selected.contains("all") || selected.contains(category.value);
+    }
+
     public static String buildExportText() {
+        return buildExportText(Integer.MAX_VALUE);
+    }
+
+    /**
+     * The report, with the oldest selected events dropped when it would run past {@code limit}.
+     * The events are the one section that grows without bound, so every other section stays whole.
+     */
+    static String buildExportText(int limit) {
         Set<String> selected = LogExportFilterPreference.parse(BaseSettings.DEBUG_LOG_FILTERS.get());
         boolean includeAll = selected.isEmpty() || selected.contains("all");
         String crash = DiagnosticRedactor.redact(readCrashReport(Utils.getContext()));
@@ -343,9 +361,13 @@ public final class LogBufferManager {
 
         List<DiagnosticEvent> snapshot = new ArrayList<>(logBuffer);
         StringBuilder events = new StringBuilder();
+        // Where each event begins. An exception event carries its stack trace on the lines
+        // below it, so a line break is not always the start of the next event.
+        List<Integer> eventStarts = new ArrayList<>();
         for (DiagnosticEvent event : snapshot) {
             if (!includeAll && !selected.contains(event.category.value)) continue;
             if (events.length() > 0) events.append('\n');
+            eventStarts.add(events.length());
             events.append(DiagnosticRedactor.redact(event.format()));
         }
 
@@ -432,14 +454,29 @@ public final class LogBufferManager {
         // Deliberately not part of worthReporting above. Every process has a last exit, most of
         // them ordinary, so counting it would mean no report was ever empty and "No matching
         // Morphe diagnostics found" would never be said again.
-        String lastExit = lastExitLine(includeAll, selected);
-        if (!lastExit.isEmpty()) {
-            report.append("\n[LAST EXIT]\n").append(lastExit).append('\n');
+        String lastExits = lastExitLines(includeAll, selected);
+        if (!lastExits.isEmpty()) {
+            report.append("\n[LAST EXITS]\n").append(lastExits).append('\n');
         }
+        int sectionStart = -1;
+        int eventsStart = -1;
         if (events.length() > 0) {
+            sectionStart = report.length();
             report.append("\n\n[SELECTED EVENTS]\n")
-                    .append("category | timestamp | thread | source | level | message\n")
-                    .append(events);
+                    .append("category | timestamp | thread | source | level | message\n");
+            eventsStart = report.length();
+            report.append(events);
+        }
+        // The same filter as the hook table, and out of worthReporting for the same reason as the
+        // last exits: "none" is the answer on almost every phone, and it is still the answer a
+        // reader needs. After the events, so that when the sections around them are too long for
+        // the quick copy on their own, its tail cut still keeps this one.
+        if (includeAll || selected.contains(
+                app.morphe.extension.shared.diagnostics.DiagnosticCategory.PATCH_ERRORS.value)) {
+            report.append("\n[").append(OtherBundles.TITLE).append("]\n");
+            for (String line : OtherBundles.lines(crash)) {
+                report.append(DiagnosticRedactor.redact(line)).append('\n');
+            }
         }
         // Immutable facts ride along only after the existing no-matching decision.
         report.append("\n[BUILD DETAILS]\n").append(BuildDetails.section(Utils.getBuildMetadata()));
@@ -449,6 +486,30 @@ public final class LogBufferManager {
             report.append("\n\n[SCREEN LAYOUT]\n");
             for (String line : layout) {
                 report.append(DiagnosticRedactor.redact(line)).append('\n');
+            }
+        }
+        if (report.length() > limit && eventsStart >= 0) {
+            String note = "clipboard_note: older events omitted; use Save full report for everything\n";
+            int over = report.length() - limit + note.length();
+            // Whole events only, so the oldest event kept is never cut in half.
+            int from = -1;
+            for (int start : eventStarts) {
+                if (start >= over) {
+                    from = start;
+                    break;
+                }
+            }
+            if (from >= 0) {
+                report.replace(eventsStart, eventsStart + events.length(), note + events.substring(from));
+            } else {
+                // Not one event fits. Kept, the section's header and the note put the report over
+                // a limit the sections around it fit, and the quick copy then cut off its first
+                // lines. A shorter line takes the section's place when it fits, and nothing does
+                // when even that would push the report over.
+                String gone = "\nclipboard_note: events omitted; use Save full report for everything\n";
+                int sectionEnd = eventsStart + events.length();
+                boolean noteFits = report.length() - (sectionEnd - sectionStart) + gone.length() <= limit;
+                report.replace(sectionStart, sectionEnd, noteFits ? gone : "");
             }
         }
         return report.toString();
@@ -481,10 +542,13 @@ public final class LogBufferManager {
      * a description like "MemoryLimiter:AnonSwap", and an ANR or a low-memory kill leaves nothing
      * behind either. One line turns an unexplained restart into something a maintainer can act on.
      *
+     * <p>The last five, newest first, one line each: a single exit can't show a pattern, such as
+     * a memory kill every time a LIVE opens.
+     *
      * <p>Read only from API 30, where the history exists at all. It follows the same filter as
      * the hook table, because it is the same kind of evidence.
      */
-    private static String lastExitLine(boolean includeAll, Set<String> selected) {
+    private static String lastExitLines(boolean includeAll, Set<String> selected) {
         if (Build.VERSION.SDK_INT < 30) return "";
         if (!includeAll && !selected.contains(
                 app.morphe.extension.shared.diagnostics.DiagnosticCategory.PATCH_ERRORS.value)) {
@@ -500,27 +564,29 @@ public final class LogBufferManager {
             // routinely a background helper the system reaped, which says nothing about why the
             // app went away, so the main process is picked out by name.
             String packageName = context.getPackageName();
+            // 0 asks for every record: helpers can fill a short list before five of the main
+            // process's own exits are in it.
             List<ApplicationExitInfo> history =
-                    manager.getHistoricalProcessExitReasons(packageName, 0, 16);
+                    manager.getHistoricalProcessExitReasons(packageName, 0, 0);
             if (history == null || history.isEmpty()) return "";
-            ApplicationExitInfo exit = null;
+            List<ApplicationExitInfo> exits = new ArrayList<>();
             for (ApplicationExitInfo candidate : history) {
-                if (packageName.equals(candidate.getProcessName())) {
-                    exit = candidate;
-                    break;
+                if (packageName.equals(candidate.getProcessName())) exits.add(candidate);
+            }
+            Collections.sort(exits, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+            StringBuilder lines = new StringBuilder();
+            for (ApplicationExitInfo exit : exits.subList(0, Math.min(5, exits.size()))) {
+                if (lines.length() > 0) lines.append('\n');
+                lines.append("at: ").append(utcOf(exit.getTimestamp()))
+                        .append(", reason: ").append(exitReasonName(exit.getReason()))
+                        .append(", status: ").append(exit.getStatus())
+                        .append(", importance: ").append(exit.getImportance());
+                String description = exit.getDescription();
+                if (description != null && !description.isEmpty()) {
+                    lines.append(", description: ").append(description.replace('\n', ' '));
                 }
             }
-            if (exit == null) return "";
-            StringBuilder line = new StringBuilder();
-            line.append("reason: ").append(exitReasonName(exit.getReason()))
-                    .append("\nstatus: ").append(exit.getStatus())
-                    .append("\nimportance: ").append(exit.getImportance())
-                    .append("\nat: ").append(utcOf(exit.getTimestamp()));
-            String description = exit.getDescription();
-            if (description != null && !description.isEmpty()) {
-                line.append("\ndescription: ").append(description);
-            }
-            return DiagnosticRedactor.redact(line.toString());
+            return DiagnosticRedactor.redact(lines.toString());
         } catch (Throwable unavailable) {
             // A build that cannot answer this is not a build that should fail to export.
             return "";

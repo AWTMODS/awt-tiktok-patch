@@ -10,6 +10,7 @@ import android.preference.PreferenceScreen;
 import app.morphe.extension.tiktok.settings.Settings;
 import app.morphe.extension.tiktok.settings.SettingsStatus;
 import app.morphe.extension.tiktok.settings.preference.InputTextPreference;
+import app.morphe.extension.tiktok.settings.preference.NumberInputPreference;
 import app.morphe.extension.tiktok.settings.preference.SectionHeadingPreference;
 import app.morphe.extension.tiktok.settings.preference.TogglePreference;
 
@@ -185,6 +186,21 @@ public class CommentsPreferenceCategory extends ConditionalPreferenceCategory {
             ));
             addPreference(new TogglePreference(
                     context,
+                    "Fold long comments",
+                    "A long comment shows its first few lines and more. Tap more to read the rest "
+                            + "right where it is.",
+                    Settings.FOLD_LONG_COMMENTS
+            ));
+            addPreference(new NumberInputPreference(
+                    context,
+                    "Fold after",
+                    "How many lines of a long comment show before more.",
+                    Settings.FOLD_LONG_COMMENTS_LINES,
+                    "%1$s line",
+                    "%1$s lines"
+            ));
+            addPreference(new TogglePreference(
+                    context,
                     "More opens the comments",
                     "Tapping more under a video opens its comments with the whole caption at the top instead of "
                             + "spreading the caption over the video. A tap on the caption itself does the same. "
@@ -308,6 +324,12 @@ public class CommentsPreferenceCategory extends ConditionalPreferenceCategory {
                     "Hide picture comments",
                     "Hide comments made of an image or a sticker instead of words.",
                     Settings.HIDE_COMMENT_MEDIA
+            ));
+            addPreference(new TogglePreference(
+                    context,
+                    "Hide voice comments",
+                    "Hide comments made of a voice recording instead of words.",
+                    Settings.HIDE_VOICE_COMMENTS
             ));
             addPreference(new TogglePreference(
                     context,

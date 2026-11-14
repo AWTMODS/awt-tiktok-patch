@@ -4,12 +4,14 @@
  */
 package app.morphe.extension.tiktok.translation;
 
+import android.animation.AnimatorSet;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.LocaleList;
 import android.os.SystemClock;
 import android.view.View;
+import android.widget.TextView;
 
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.diagnostics.HookStatus;
@@ -181,11 +183,213 @@ public final class CommentBatchTranslator {
                 lastManager = new WeakReference<>(manager);
             }
 
-            translateLoadedBatchIfReady(manager, false);
+            // This runs mid-bind, right after TikTok writes the row's manager and before it writes
+            // the row's text. A request made here let the native batch change a comment's
+            // translation state under the bind, and a row could keep the comment it showed on the
+            // previous sheet (#383). Posted, it goes out once the bind has finished.
+            Utils.runOnMainThread(() -> translateLoadedBatchIfReady(manager, false));
             itemView.postDelayed(() -> translateLoadedBatchIfReady(manager, true), 350);
         } catch (Throwable ex) {
             Logger.printDebug(() -> "[Morphe CommentBatchTranslator] register failed", asException(ex));
         }
+    }
+
+    /** Per comment row class, the fields that lead from the row to its translation manager. */
+    private static final ConcurrentHashMap<Class<?>, Field[]> OBSERVER_PATHS = new ConcurrentHashMap<>();
+    /** Per native translator class, its lookup from a comment id to that comment's translation updates. */
+    private static final ConcurrentHashMap<Class<?>, ResolvedMethod> UPDATE_LOOKUPS = new ConcurrentHashMap<>();
+    /** Per translation manager class, the field to its row's text writer and the writer's fade. */
+    private static final ConcurrentHashMap<Class<?>, Field[]> ROW_WRITERS = new ConcurrentHashMap<>();
+
+    /**
+     * Takes a comment row's translation manager off the updates of the comment the row showed
+     * before, when the row is bound to a different comment (#383).
+     *
+     * <p>The manager is the row's observer of its comment's translation, and it writes the comment
+     * an update carries into the row without checking that it is still the row's own. TikTok moves
+     * it from the old comment's updates to the new one's only on the branch of its bind that offers
+     * a translation, so a row reused for a comment that takes another branch (a picture or sticker
+     * with no text, a linked video) kept hearing the comment it showed before. A translation that
+     * came in for that comment afterwards, as the batches Auto translate comments asks for do, put
+     * its text in a row showing another comment until the list scrolled. Injected ahead of every
+     * branch of the bind, so this runs for every row of every comment list: the walk from the row
+     * to its manager is worked out once per row class, from field types alone. An update the row
+     * already heard is stopped too, see {@link #cancelPendingWrite}.
+     */
+    public static void releaseStaleObserver(Object cell, Object comment, Class<?> managerClass) {
+        if (cell == null || comment == null || managerClass == null) return;
+        try {
+            Field[] path = observerPath(cell.getClass(), managerClass);
+            if (path.length == 0) return;
+            Object manager = cell;
+            for (Field field : path) {
+                manager = field.get(manager);
+                if (manager == null) return;
+            }
+            if (!managerClass.isInstance(manager)) return;
+            AnchorParts parts = resolveAnchorParts(manager);
+            if (parts == null) return;
+            String shown = invokeStringQuiet(parts.comment, "getCid");
+            if (isBlank(shown) || shown.equals(invokeStringQuiet(comment, "getCid"))) return;
+
+            Method lookup = translationUpdatesLookup(parts.nativeManager.getClass());
+            Object updates = lookup == null ? null : lookup.invoke(null, shown);
+            Method remove = updates == null ? null : observerRemover(updates.getClass());
+            boolean released = remove != null && remove.getParameterTypes()[0].isInstance(manager);
+            if (released) remove.invoke(updates, manager);
+            boolean cancelled = cancelPendingWrite(manager);
+            if (released || cancelled) {
+                Logger.printDebug(() -> "[Morphe CommentBatchTranslator] row let go of " + shown
+                        + (released ? ", stopped hearing it" : "")
+                        + (cancelled ? ", dropped its pending write" : ""));
+            }
+        } catch (Throwable ex) {
+            Logger.printDebug(() -> "[Morphe CommentBatchTranslator] observer release failed", asException(ex));
+        }
+    }
+
+    /**
+     * Stops a translation write the row's manager has started and not yet finished (#383).
+     *
+     * <p>TikTok 47.7.3 does not put an update's text in the row when it hears it: the row's writer
+     * fades the text out over 100 ms and writes it when the fade ends. Each bind gives the row a
+     * new writer and never stops the old one's fade, so an update heard just before the row was
+     * reused (a reset, or a batch result arriving as a sheet opens) wrote the old comment's text
+     * into the row about 100 ms after it began showing another comment. TikTok's own cancel
+     * listener on that fade drops the write. Should a build's listener let it run instead, it runs
+     * now, ahead of the text this bind writes, which replaces it.
+     */
+    private static boolean cancelPendingWrite(Object manager) throws IllegalAccessException {
+        Field[] writer = rowWriter(manager);
+        if (writer.length == 0) return false;
+        Object value = writer[0].get(manager);
+        if (value == null || !writer[1].getDeclaringClass().isInstance(value)) return false;
+        Object fade = writer[1].get(value);
+        if (!(fade instanceof AnimatorSet) || !((AnimatorSet) fade).isStarted()) return false;
+        ((AnimatorSet) fade).cancel();
+        return true;
+    }
+
+    /**
+     * The manager's field holding the row's text writer, then the writer's fade field: the one
+     * object the manager keeps, other than a view or a context, whose class declares a single
+     * AnimatorSet and a TextView (47.7.3: {@code X.0Hdb}). Empty unless exactly one fits. Read
+     * from the values, since the manager declares its writer under an interface, and an unset
+     * field leaves the answer open until a later bind fills it.
+     */
+    private static Field[] rowWriter(Object manager) {
+        Class<?> managerClass = manager.getClass();
+        Field[] cached = ROW_WRITERS.get(managerClass);
+        if (cached != null) return cached;
+        ClassLoader loader = managerClass.getClassLoader();
+        ArrayList<Field[]> found = new ArrayList<>();
+        boolean complete = true;
+        for (Field field : appFields(managerClass, loader)) {
+            if (field.getType().getClassLoader() != loader) continue;
+            Object value;
+            try {
+                field.setAccessible(true);
+                value = field.get(manager);
+            } catch (Throwable ex) {
+                continue;
+            }
+            if (value == null) {
+                complete = false;
+                continue;
+            }
+            if (value instanceof View || value instanceof Context) continue;
+            Field fade = null;
+            int fades = 0;
+            boolean writesText = false;
+            for (Field inner : appFields(value.getClass(), loader)) {
+                if (inner.getType() == AnimatorSet.class) {
+                    fade = inner;
+                    fades++;
+                } else if (TextView.class.isAssignableFrom(inner.getType())) {
+                    writesText = true;
+                }
+            }
+            if (fades == 1 && writesText) found.add(new Field[] {field, fade});
+        }
+        Field[] writer = found.size() == 1 ? found.get(0) : new Field[0];
+        for (Field field : writer) field.setAccessible(true);
+        if (writer.length > 0 || complete) ROW_WRITERS.put(managerClass, writer);
+        return writer;
+    }
+
+    /**
+     * The fields from a comment row to its translation manager: one the row declares whose type
+     * the manager fits, or one on an object the row keeps (TikTok 47.7.3 keeps the manager on the
+     * row's state holder, under the manager's base type). Only types loaded with the row's own
+     * classes are looked into, so no framework class is, and empty unless exactly one path fits.
+     */
+    private static Field[] observerPath(Class<?> cellClass, Class<?> managerClass) {
+        Field[] cached = OBSERVER_PATHS.get(cellClass);
+        if (cached != null) return cached;
+        ClassLoader loader = cellClass.getClassLoader();
+        ArrayList<Field[]> found = new ArrayList<>();
+        for (Field field : appFields(cellClass, loader)) {
+            Class<?> type = field.getType();
+            if (type.getClassLoader() != loader) continue;
+            if (type.isAssignableFrom(managerClass)) {
+                found.add(new Field[] {field});
+                continue;
+            }
+            for (Field inner : appFields(type, loader)) {
+                Class<?> innerType = inner.getType();
+                if (innerType.getClassLoader() == loader && innerType.isAssignableFrom(managerClass)) {
+                    found.add(new Field[] {field, inner});
+                }
+            }
+        }
+        Field[] path = found.size() == 1 ? found.get(0) : new Field[0];
+        for (Field field : path) field.setAccessible(true);
+        OBSERVER_PATHS.put(cellClass, path);
+        return path;
+    }
+
+    /** The instance fields of the class and of its superclasses loaded by the same loader. */
+    private static List<Field> appFields(Class<?> type, ClassLoader loader) {
+        ArrayList<Field> fields = new ArrayList<>();
+        for (Class<?> current = type; current != null && current.getClassLoader() == loader;
+                current = current.getSuperclass()) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!Modifier.isStatic(field.getModifiers()) && !field.getType().isPrimitive()) fields.add(field);
+            }
+        }
+        return fields;
+    }
+
+    /**
+     * The native translator's static lookup from a comment id to that comment's translation
+     * updates (47.7.3: {@code LIZIZ(String)}, a NextLiveData), or null unless exactly one static
+     * method takes a single String and returns something an observer can be removed from.
+     */
+    private static Method translationUpdatesLookup(Class<?> nativeManagerClass) {
+        ResolvedMethod cached = UPDATE_LOOKUPS.get(nativeManagerClass);
+        if (cached != null) return cached.method;
+        Method found = null;
+        int matches = 0;
+        for (Method method : nativeManagerClass.getDeclaredMethods()) {
+            Class<?>[] parameters = method.getParameterTypes();
+            // A lambda's body is a synthetic static method of the class that may take the same shape.
+            if (!Modifier.isStatic(method.getModifiers()) || method.isSynthetic() || parameters.length != 1
+                    || parameters[0] != String.class || observerRemover(method.getReturnType()) == null) continue;
+            found = method;
+            matches++;
+        }
+        Method lookup = matches == 1 ? found : null;
+        if (lookup != null) lookup.setAccessible(true);
+        UPDATE_LOOKUPS.put(nativeManagerClass, new ResolvedMethod(lookup));
+        return lookup;
+    }
+
+    /** The public one-argument {@code removeObserver} of a LiveData-like type, or null. */
+    private static Method observerRemover(Class<?> type) {
+        for (Method method : type.getMethods()) {
+            if (method.getName().equals("removeObserver") && method.getParameterTypes().length == 1) return method;
+        }
+        return null;
     }
 
     /**

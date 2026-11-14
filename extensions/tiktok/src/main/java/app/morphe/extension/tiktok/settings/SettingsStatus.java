@@ -125,6 +125,7 @@ public class SettingsStatus {
     public static boolean inboxFilterEnabled = false;
     public static boolean inboxFilterTabsEnabled = false;
     public static boolean messageSearchRebuildEnabled = false;
+    public static boolean pinMoreChatsEnabled = false;
     public static boolean videoFitEnabled = false;
     public static boolean refreshRateEnabled = false;
     public static boolean cameraBrightnessEnabled = false;
@@ -326,6 +327,13 @@ public class SettingsStatus {
         keepOfflineVideosEnabled = true;
     }
 
+    /** Custom offline videos limit found TikTok's watched-video clean-up on this build and hooked it. */
+    public static boolean offlineWatchedDeleteEnabled = false;
+
+    public static void enableOfflineWatchedDelete() {
+        offlineWatchedDeleteEnabled = true;
+    }
+
     public static void enableSimSpoof() {
         simSpoofEnabled = true;
     }
@@ -354,6 +362,18 @@ public class SettingsStatus {
 
     public static void enableBottomTabLabels() {
         bottomTabLabelsEnabled = true;
+    }
+
+    public static boolean bottomTabIconsEnabled = false;
+
+    public static void enableBottomTabIcons() {
+        bottomTabIconsEnabled = true;
+    }
+
+    public static boolean bottomBarHeightEnabled = false;
+
+    public static void enableBottomBarHeight() {
+        bottomBarHeightEnabled = true;
     }
 
     public static void enableDiscoverTab() {
@@ -601,6 +621,11 @@ public class SettingsStatus {
         messageSearchRebuildEnabled = true;
     }
 
+    /** The cap on pinned chats in the Inbox was found and hooked (#385). */
+    public static void enablePinMoreChats() {
+        pinMoreChatsEnabled = true;
+    }
+
     public static void enableCommentTools() {
         commentToolsEnabled = true;
     }
@@ -804,6 +829,13 @@ public class SettingsStatus {
         profileMenuCellsEnabled = true;
     }
 
+    /** Hide profile shortcuts found the profile pager's tab list and TikTok's tab names, and hooked them. */
+    public static boolean profileTabsEnabled = false;
+
+    public static void enableProfileTabs() {
+        profileTabsEnabled = true;
+    }
+
     /** Skip the splash ad put its switch in front of the splash tasks and gates. */
     public static boolean skipSplashAdEnabled = false;
 
@@ -901,6 +933,8 @@ public class SettingsStatus {
     public static void enableNoLoginRequirement() { noLoginRequirementEnabled = true; }
     public static boolean googleLoginFixEnabled = false;
     public static void enableGoogleLoginFix() { googleLoginFixEnabled = true; }
+    public static boolean spotifyLoginFixEnabled = false;
+    public static void enableSpotifyLoginFix() { spotifyLoginFixEnabled = true; }
     public static boolean runBesideStoreAppEnabled = false;
     public static void enableRunBesideStoreApp() { runBesideStoreAppEnabled = true; }
     public static boolean commentPublishDiagnosticsEnabled = false;

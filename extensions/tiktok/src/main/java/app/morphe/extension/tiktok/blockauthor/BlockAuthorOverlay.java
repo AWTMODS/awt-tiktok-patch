@@ -31,11 +31,13 @@ import app.morphe.extension.shared.settings.StringSetting;
 import app.morphe.extension.tiktok.download.OriginalPhotos;
 import app.morphe.extension.tiktok.feedfilter.SoundIdentity;
 import app.morphe.extension.tiktok.interaction.GestureActions;
+import app.morphe.extension.tiktok.interaction.Haptics;
 import app.morphe.extension.tiktok.settings.Settings;
 import app.morphe.extension.tiktok.settings.SystemBarInsets;
 import app.morphe.extension.tiktok.settings.preference.SettingsUi;
 import app.morphe.extension.tiktok.settings.L10n;
 import app.morphe.extension.tiktok.settings.SettingsStatus;
+import app.morphe.extension.tiktok.notinterested.AlsoFilter;
 import app.morphe.extension.tiktok.notinterested.NotInterested;
 import app.morphe.extension.tiktok.playback.FeedMute;
 import app.morphe.extension.tiktok.wellbeing.SessionBudget;
@@ -522,6 +524,7 @@ public final class BlockAuthorOverlay {
         button.setOnClickListener(view -> {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             NotInterested.submit();
+            AlsoFilter.offer(activity);
         });
         installDrag(button);
         return button;
@@ -612,7 +615,7 @@ public final class BlockAuthorOverlay {
     }
 
     /** A local action may claim success only after its preference commit succeeded. */
-    static <T> boolean saveAction(Setting<T> setting, T value) {
+    public static <T> boolean saveAction(Setting<T> setting, T value) {
         if (setting.save(value)) return true;
         Utils.showToastLong(L10n.t("This change couldn't be saved. Try again."));
         return false;
@@ -685,7 +688,7 @@ public final class BlockAuthorOverlay {
             if (pressedControlReference.get() != view) return false;
             dragging = true;
             view.setAlpha(0.75f);
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            Haptics.performHapticFeedback(view, HapticFeedbackConstants.LONG_PRESS);
             if (positionSetting(view).get().isEmpty()) {
                 Utils.showToastShort(L10n.t("Drag to move, release to place"));
             }

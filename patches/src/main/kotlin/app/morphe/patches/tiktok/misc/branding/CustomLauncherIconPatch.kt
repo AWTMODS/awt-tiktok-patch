@@ -4,8 +4,13 @@
  */
 package app.morphe.patches.tiktok.misc.branding
 
+import app.morphe.patcher.patch.resourceFile
+import app.morphe.patcher.patch.document
+import app.morphe.patcher.patch.listDecodableFiles
+import app.morphe.patcher.patch.decode
+import app.morphe.patcher.patch.listApkEntries
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.patch.PatchException
-import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.patches.tiktok.misc.diagnostics.BUILD_DETAILS_ASSET
@@ -100,7 +105,7 @@ internal const val ADRMODTT_STATUS_ICON =
         "</vector>\n"
 
 @Suppress("unused")
-val customLauncherIconPatch = resourcePatch(
+val customLauncherIconPatch = patch(
     name = "Custom launcher icon",
     description = "Gives TikTok's home screen icon a themed version that takes your " +
         "wallpaper's color on Android 13 and up. The options can also make it black, plain, " +
@@ -139,6 +144,7 @@ val customLauncherIconPatch = resourcePatch(
             "$MAX_PICTURE_SIDE pixels on each side, to use instead of TikTok's note. Home screens " +
             "trim icons to their own shape, so keep what matters in the middle two thirds. With " +
             "a picture, the style only sets the color behind it and there's no themed icon. " +
+            "A folder works too when the picture is the only PNG in it or is named icon.png. " +
             "Leave it empty to keep the note.",
         required = false,
     )
@@ -158,19 +164,19 @@ val customLauncherIconPatch = resourcePatch(
         val background = iconBackground(backgroundColor) ?: chosen.background
         val picture = launcherPicture(pictureFile)
         val statusIcon = notificationIcon(notification)
-        val packageRoot = get("res").parentFile
+        val packageRoot = resourceFile("res").parentFile
         val decodedRoots = decodedPackageRoots(packageRoot)
         val decodable by lazy { listDecodableFiles("res/**").toSet() }
         val collisions = renamedPathCollisions(
             entries = listApkEntries("res/"),
             decodedDirectories = decodedResourceDirectories(decodedRoots),
-            aliasOf = { name -> get(name, false).relativeTo(packageRoot).invariantSeparatorsPath },
+            aliasOf = { name -> resourceFile(name, false).relativeTo(packageRoot).invariantSeparatorsPath },
             isDecoded = { name -> name in decodable || decodedRoots.any { it.resolve(name).isFile } },
         )
         if (collisions.isNotEmpty()) throw PatchException(renamedIconPathsRefusal(collisions.size))
 
-        val res = get("res")
-        val icons = launcherIconReferences(readXml(get("AndroidManifest.xml")))
+        val res = resourceFile("res")
+        val icons = launcherIconReferences(readXml(resourceFile("AndroidManifest.xml")))
         icons.mapNotNull(::appResource).forEach { (type, name) -> decode("res/$type*/$name.xml") }
         val adaptiveIcons = icons.flatMap { adaptiveIconFiles(res, it) }.distinct()
         if (adaptiveIcons.isEmpty()) {
@@ -201,7 +207,7 @@ val customLauncherIconPatch = resourcePatch(
         picture?.let { res.resolve("drawable-nodpi/$PICTURE_NAME.png").apply { parentFile.mkdirs() }.writeBytes(it.bytes) }
         for ((folder, file) in colorFiles) appendColorEntries(file, materialYouColorEntries(folder))
         for ((file, layer) in layers) {
-            document(file.relativeTo(get(".")).invariantSeparatorsPath).use { icon ->
+            document(file.relativeTo(resourceFile(".")).invariantSeparatorsPath).use { icon ->
                 restyleAdaptiveIcon(icon, layer, chosen, pictureReference, background)
             }
         }
@@ -211,7 +217,7 @@ val customLauncherIconPatch = resourcePatch(
             res.resolve("drawable-anydpi/$STATUS_ICON.xml").apply { parentFile.mkdirs() }
                 .writeText(ADRMODTT_STATUS_ICON, Charsets.UTF_8)
         }
-        BuildDetails.applied(get(BUILD_DETAILS_ASSET), "customLauncherIcon")
+        BuildDetails.applied(resourceFile(BUILD_DETAILS_ASSET), "customLauncherIcon")
     }
 }
 
@@ -302,7 +308,9 @@ internal fun launcherPicture(raw: String?): LauncherPicture? {
     val path = raw?.trim().orEmpty()
     if (path.isEmpty()) return null
     fun refuse(why: String): Nothing = throw PatchException("Custom launcher icon: $why Nothing was changed.")
-    val file = File(path)
+    val named = File(path)
+    // Morphe Manager's picker for this option hands back a folder, not a file.
+    val file = if (named.isDirectory) pictureInFolder(named) { refuse(it) } else named
     if (!file.isFile) refuse("there's no file at \"$path\".")
     if (file.length() > MAX_PICTURE_MEGABYTES * 1024L * 1024L) {
         refuse("\"${file.name}\" is larger than $MAX_PICTURE_MEGABYTES MB, which is too big for an icon.")
@@ -317,6 +325,31 @@ internal fun launcherPicture(raw: String?): LauncherPicture? {
         )
     }
     return LauncherPicture(bytes, width)
+}
+
+/**
+ * The picture in [folder]: its only PNG, or `icon.png` (any case) when it holds several. Anything
+ * else goes to [refuse] with the PNGs it found, at most eight of them by name. Hidden files are
+ * passed over: a Mac copying to a memory card leaves a `._name.png` beside every picture, and
+ * that would make one picture look like two.
+ */
+internal fun pictureInFolder(folder: File, refuse: (String) -> Nothing): File {
+    // Null, not empty, when the folder can't be read, which on a phone usually means the app
+    // patching wasn't given access to it. Saying it holds no PNG would send someone looking for
+    // a picture that's right there.
+    val entries = folder.listFiles()
+        ?: refuse("the folder \"${folder.path}\" couldn't be read. Give Icon picture the file's full path instead.")
+    val pngs = entries
+        .filter { it.isFile && !it.name.startsWith(".") && it.name.endsWith(".png", ignoreCase = true) }
+        .sortedBy { it.name.lowercase() }
+    if (pngs.isEmpty()) refuse("there's no PNG in the folder \"${folder.path}\".")
+    if (pngs.size == 1) return pngs.single()
+    pngs.firstOrNull { it.name.equals("icon.png", ignoreCase = true) }?.let { return it }
+    val shown = pngs.take(8).joinToString { it.name } + if (pngs.size > 8) " and ${pngs.size - 8} more" else ""
+    refuse(
+        "the folder \"${folder.path}\" holds ${pngs.size} PNGs ($shown). Name the one to use icon.png, " +
+            "or give Icon picture the file's full path.",
+    )
 }
 
 /**

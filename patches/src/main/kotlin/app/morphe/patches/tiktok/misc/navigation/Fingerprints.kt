@@ -5,6 +5,7 @@
 package app.morphe.patches.tiktok.misc.navigation
 
 import app.morphe.patcher.Fingerprint
+import app.morphe.patches.tiktok.shared.dispatchesOnIndex
 import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -135,6 +136,19 @@ internal fun Method.isLiveBottomTabCheck(): Boolean =
         implementation?.instructions?.any {
             it.opcode == Opcode.SGET_OBJECT && it.getReference<FieldReference>()?.type == COPY_ON_WRITE
         } == true
+
+/**
+ * The lazy that reads which set of bottom tab icons to draw (#285). Everything else that names
+ * this experiment key only registers it and returns nothing. It has to be a lambda of its own:
+ * were R8 to fold the read into a merged group, the pick written at the top of the group's entry
+ * point would answer every lambda in it, so that entry point is no match and the icons are left out.
+ */
+internal object BottomTabIconVersionFingerprint : Fingerprint(
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf(),
+    strings = listOf("new_bottom_tab_icon2"),
+    custom = { method, _ -> method.name == "invoke" && !method.dispatchesOnIndex() },
+)
 
 /** The corner button compares TikTok's LIVE placement with both top-tab modes here. */
 internal object LiveTopTabModeFingerprint : Fingerprint(
@@ -401,6 +415,78 @@ internal fun Method.branchTargets(): Set<Int> {
     return targets
 }
 
+internal const val BACK_REFRESH_STRATEGY_ASSEM = "Lcom/ss/android/ugc/aweme/main/assems/BackRefreshStrategyAssem;"
+internal const val TAB_CHANGE_MANAGER = "Lcom/ss/android/ugc/aweme/main/TabChangeManager;"
+
+/**
+ * The main activity's Back, past TikTok's press-twice-to-quit check: it reads the tab Back starts
+ * on from the tab manager and names it to its back helper, ends there when the helper says a guide
+ * was showing, and from any tab but Home posts "performClickTab" for "HOME", which switches to
+ * For You. The start page answers both (#360).
+ */
+internal object BackPressFingerprint : Fingerprint(
+    definingClass = BACK_REFRESH_STRATEGY_ASSEM,
+    name = "onBackPress",
+    returnType = "V",
+    parameters = listOf(),
+    strings = listOf("performClickTab", "HOME"),
+    custom = { method, _ -> method.backPress() != null },
+)
+
+/**
+ * Where the start page answers in [BackPressFingerprint]'s method: [namedAt] is the guide check
+ * right after the tab is named to the helper, with the tab's tag in [tag]; [handledAt] is the test
+ * of that check's answer, held in [handled]; [homeAt] is the "performClickTab" post, whose tag
+ * sits in [home].
+ */
+internal class BackPress(val namedAt: Int, val tag: Int, val handledAt: Int, val handled: Int, val homeAt: Int, val home: Int)
+
+internal fun Method.backPress(): BackPress? {
+    val instructions = implementation?.instructions?.toList() ?: return null
+    fun call(index: Int, opcode: Opcode) =
+        instructions.getOrNull(index)?.takeIf { it.opcode == opcode }?.getReference<MethodReference>()
+    // The helper is told the tab's tag, then asked whether a guide was showing, and the answer is tested.
+    val namedAt = instructions.indices.firstOrNull { i ->
+        val name = call(i - 1, Opcode.INVOKE_INTERFACE) ?: return@firstOrNull false
+        val guide = call(i, Opcode.INVOKE_INTERFACE) ?: return@firstOrNull false
+        name.returnType == "V" && name.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;") &&
+            guide.definingClass == name.definingClass && guide.returnType == "Z" && guide.parameterTypes.isEmpty() &&
+            instructions.getOrNull(i + 1)?.opcode == Opcode.MOVE_RESULT &&
+            instructions.getOrNull(i + 2)?.opcode == Opcode.IF_EQZ &&
+            (instructions[i + 2] as OneRegisterInstruction).registerA == (instructions[i + 1] as OneRegisterInstruction).registerA
+    } ?: return null
+    val tag = (instructions[namedAt - 1] as FiveRegisterInstruction).registerD
+    // That tag is the tab manager's current tab, an empty one standing in when it has none.
+    val fromTabManager = instructions.subList(0, namedAt - 1).withIndex().any { (i, instruction) ->
+        instruction.opcode == Opcode.INVOKE_VIRTUAL && instruction.getReference<MethodReference>()?.let {
+            it.definingClass == TAB_CHANGE_MANAGER && it.returnType == "Ljava/lang/String;" && it.parameterTypes.isEmpty()
+        } == true && instructions.getOrNull(i + 1)?.let {
+            it.opcode == Opcode.MOVE_RESULT_OBJECT && (it as OneRegisterInstruction).registerA == tag
+        } == true
+    }
+    if (!fromTabManager) return null
+    val handledAt = namedAt + 2
+    val handled = (instructions[namedAt + 1] as OneRegisterInstruction).registerA
+    // const-string "HOME" straight ahead of the post, whose event name was loaded just before.
+    val homeAt = instructions.indices.firstOrNull { i ->
+        val post = call(i, Opcode.INVOKE_VIRTUAL) ?: return@firstOrNull false
+        val home = instructions.getOrNull(i - 1) ?: return@firstOrNull false
+        val event = instructions.getOrNull(i - 2) ?: return@firstOrNull false
+        post.definingClass == definingClass && post.returnType == "V" &&
+            post.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/Object;", "Ljava/lang/String;") &&
+            home.opcode == Opcode.CONST_STRING && home.getReference<StringReference>()?.string == "HOME" &&
+            event.opcode == Opcode.CONST_STRING && event.getReference<StringReference>()?.string == "performClickTab" &&
+            (instructions[i] as FiveRegisterInstruction).let {
+                it.registerD == (home as OneRegisterInstruction).registerA && it.registerE == (event as OneRegisterInstruction).registerA
+            }
+    } ?: return null
+    if (homeAt < handledAt) return null
+    val home = (instructions[homeAt - 1] as OneRegisterInstruction).registerA
+    // Each answer goes in front of an instruction nothing jumps to, so no path skips it.
+    if (setOf(namedAt, handledAt, homeAt).any { it in branchTargets() }) return null
+    return BackPress(namedAt, tag, handledAt, handled, homeAt, home)
+}
+
 internal const val A11Y_FEED_TOOL = "Lcom/ss/android/ugc/feed/platform/panel/accessibility/A11yFeedToolComponent;"
 
 /**
@@ -449,6 +535,18 @@ internal object ProfileTabSwitcherFingerprint : Fingerprint(
     strings = listOf("USER", "long_press_profile_tab", "switch_account_long_press"),
 )
 
+/**
+ * TikTok's switch_account_gesture experiment, the one `()Z` reader of it. The bottom bar asks it
+ * before it puts the hold that posts Profile's tag on the tab, and [ProfileTabSwitcherFingerprint]'s
+ * handler asks it again before the sheet. It answers no on some accounts, so holding Profile does
+ * nothing there (#388).
+ */
+internal object SwitchAccountGestureFingerprint : Fingerprint(
+    returnType = "Z",
+    parameters = listOf(),
+    strings = listOf("switch_account_gesture"),
+)
+
 internal const val HOME_VIEW_PAGER_ASSEM = "Lcom/ss/android/ugc/aweme/main/assems/mainfragment/HomeViewPagerAssem;"
 internal const val HOME_PAGE_EX_SERVICE = "Lcom/ss/android/ugc/aweme/homepage/IHomePageExService;"
 internal const val HOX = "Lcom/bytedance/hox/Hox;"
@@ -458,6 +556,50 @@ internal const val HOX = "Lcom/bytedance/hox/Hox;"
  * signed-in account outside teen mode that is the tab TikTok's home page service names, else
  * "For You", handed to Hox's tab switch by its tag. The start page answers there.
  */
+private const val FRIENDS_TOP_EXPERIMENT = "Lcom/ss/android/ugc/aweme/friendstab/experiment/FriendsTabTopExperiment;"
+
+/**
+ * TikTok's answer to whether Friends is in the top row (#98): the one no-argument boolean on the
+ * friends service that falls back on the experiment's index. The bottom Friends tab asks it too.
+ */
+internal object FriendsOnTopFingerprint : Fingerprint(
+    definingClass = "Lcom/ss/android/ugc/aweme/friendstab/service/FriendsFeedServiceImpl;",
+    returnType = "Z",
+    parameters = listOf(),
+    custom = { method, _ ->
+        method.implementation?.instructions?.any { instruction ->
+            instruction.opcode == Opcode.INVOKE_STATIC && instruction.getReference<MethodReference>()?.let {
+                it.definingClass == FRIENDS_TOP_EXPERIMENT && it.returnType == "I"
+            } == true
+        } == true
+    },
+)
+
+/** The experiment's place for Friends in the top row, -1 when it isn't there. Its only `()I`. */
+internal object FriendsTopIndexFingerprint : Fingerprint(
+    definingClass = FRIENDS_TOP_EXPERIMENT,
+    returnType = "I",
+    parameters = listOf(),
+)
+
+/** Whether the Friends tab offers itself to the bottom bar. */
+internal object FriendsBottomTabEnableFingerprint : Fingerprint(
+    definingClass = "Lcom/ss/android/ugc/aweme/tab/FriendsTabProtocol;",
+    name = "enable",
+    returnType = "Z",
+    parameters = listOf(),
+)
+
+/**
+ * TikTok's fast-start flag (`tab_fcp_backup_config`): while it's on, both tab rows come from the list
+ * saved on the last run and no tab's own check is asked (#98). The flag's one `()Z` reader.
+ */
+internal object SavedTabsFingerprint : Fingerprint(
+    returnType = "Z",
+    parameters = listOf(),
+    strings = listOf("tab_fcp_backup_config"),
+)
+
 internal object FirstTopTabFingerprint : Fingerprint(
     definingClass = HOME_VIEW_PAGER_ASSEM,
     name = "onViewCreated",

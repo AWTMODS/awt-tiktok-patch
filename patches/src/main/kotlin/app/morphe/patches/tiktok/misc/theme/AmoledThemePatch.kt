@@ -6,8 +6,13 @@
  */
 package app.morphe.patches.tiktok.misc.theme
 
+import app.morphe.patcher.patch.resourceFile
+import app.morphe.patcher.patch.document
+import app.morphe.patcher.patch.listDecodableFiles
+import app.morphe.patcher.patch.decode
+import app.morphe.patcher.patch.listApkEntries
+import app.morphe.patcher.patch.packageMetadata
 import app.morphe.patcher.patch.PatchException
-import app.morphe.patcher.patch.ResourcePatchContext
 import app.morphe.patcher.patch.colorOption
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.patches.tiktok.misc.diagnostics.BUILD_DETAILS_ASSET
@@ -51,7 +56,7 @@ val amoledThemePatch = resourcePatch(
     dependsOn(amoledWebPagesPatch { background })
     execute {
         paintAmoledResources(background)
-        BuildDetails.amoled(get(BUILD_DETAILS_ASSET), amoledColor(background))
+        BuildDetails.amoled(resourceFile(BUILD_DETAILS_ASSET), amoledColor(background))
     }
 }
 
@@ -60,14 +65,14 @@ val amoledThemePatch = resourcePatch(
  * become [background], and TikTok's own values are kept beside them for the switch in Adrmodtt
  * settings (#372). Answers the theme attributes whose stock value was kept, by index.
  */
-internal fun ResourcePatchContext.paintAmoledResources(background: String?): List<String> {
-    val packageRoot = get("res").parentFile
+internal fun paintAmoledResources(background: String?): List<String> {
+    val packageRoot = resourceFile("res").parentFile
     val decodedRoots = decodedPackageRoots(packageRoot)
     val decodable by lazy { listDecodableFiles("res/**").toSet() }
     val collisions = renamedPathCollisions(
         entries = listApkEntries("res/"),
         decodedDirectories = decodedResourceDirectories(decodedRoots),
-        aliasOf = { name -> get(name, false).relativeTo(packageRoot).invariantSeparatorsPath },
+        aliasOf = { name -> resourceFile(name, false).relativeTo(packageRoot).invariantSeparatorsPath },
         isDecoded = { name -> name in decodable || decodedRoots.any { it.resolve(name).isFile } },
     )
     if (collisions.isNotEmpty()) throw PatchException(renamedPathsRefusal(collisions.size))
@@ -80,7 +85,7 @@ internal fun ResourcePatchContext.paintAmoledResources(background: String?): Lis
     val found = mutableSetOf<String>()
     val styleItemsFound = mutableSetOf<String>()
     decode("res/values*/colors.xml", "res/values*/styles.xml", "res/values/attrs.xml")
-    val valuesDirectories = get("res").listFiles().orEmpty()
+    val valuesDirectories = resourceFile("res").listFiles().orEmpty()
         .filter { it.isDirectory && it.name.startsWith("values") }
     val colorFiles = valuesDirectories.map { it.resolve("colors.xml") }.filter { it.exists() }
     val styleFiles = valuesDirectories.map { it.resolve("styles.xml") }.filter { it.exists() }
@@ -88,7 +93,7 @@ internal fun ResourcePatchContext.paintAmoledResources(background: String?): Lis
     // switch adds is already taken, which refuses the build with nothing changed.
     val reader = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     val styleDocuments = styleFiles.map { reader.parse(it) }
-    val attrsFile = get("res/values/attrs.xml")
+    val attrsFile = resourceFile("res/values/attrs.xml")
     val taken = restoreNamesTaken(
         styleDocuments + colorFiles.map { reader.parse(it) } + listOfNotNull(attrsFile.takeIf { it.isFile }?.let { reader.parse(it) }),
     )
@@ -97,7 +102,7 @@ internal fun ResourcePatchContext.paintAmoledResources(background: String?): Lis
     }
     val restorable = restorableAttributes(styleDocuments, surfaces, backgrounds)
     colorFiles.forEach { file ->
-        document(file.relativeTo(get(".")).invariantSeparatorsPath).use { xml ->
+        document(file.relativeTo(resourceFile(".")).invariantSeparatorsPath).use { xml ->
             // TikTok's gray goes on under a name of its own first, for the switch to point back at.
             addTwinColors(xml, backgrounds)
             val colors = xml.getElementsByTagName("color")
@@ -116,7 +121,7 @@ internal fun ResourcePatchContext.paintAmoledResources(background: String?): Lis
     // (SURFACE_STYLE_ITEMS). Only a dark literal is rewritten, so a light style's white
     // stays white. Every style keeps its own value beside each of those first.
     styleFiles.forEach { file ->
-        document(file.relativeTo(get(".")).invariantSeparatorsPath).use { xml ->
+        document(file.relativeTo(resourceFile(".")).invariantSeparatorsPath).use { xml ->
             addStockSiblings(xml, restorable, backgrounds)
             styleItemsFound += rewriteDarkStyleItems(xml, surfaces, color, raised)
         }
@@ -356,11 +361,18 @@ internal fun declaredVersions(): Set<String> =
  *   like this" one after Not interested) and of its popover menus, the comments' sort menu among
  *   them: TuxToast's background and TuxTooltip's popover background both point at a2_. Both
  *   stayed #3A3A3A under AMOLED through 0.81.0 (#368).
+ * - aih is UISheetFlat2's (attr/a28), the second fill on a sheet: the circle behind the comment
+ *   panel's close X (drawable af9, which CommentPageActionBarAssem sets on the X when TikTok draws
+ *   round header buttons), TuxTextCell's background, and other shapes, rows and panels on sheets.
+ *   Its 61 uses in 47.7.3's XML are all solids and backgrounds, none a text, icon or stroke color
+ *   (one is a 1px line under a card, which goes black with the sheet). It's #2C2C2C, #3A3A3A,
+ *   #2A2F35 or #292D32 by palette, all under the plain gate, and the light themes send a28 to axs.
+ *   The X stayed on a gray circle on the black comments before (#371).
  * The token names move a place or two with every build, and on 46.x a name these use now was
  * another surface tier, which is why only a build whose names were read is patched.
  */
 internal val SURFACE_STYLE_ITEMS: Map<String, Set<String>> = linkedMapOf(
-    "47.7.3" to setOf("agp", "c3", "aif", "ail", "ain", "bx", "ags", "agk", "agl", "agm", "agq", "agr", "aij"),
+    "47.7.3" to setOf("agp", "c3", "aif", "ail", "ain", "bx", "ags", "agk", "agl", "agm", "agq", "agr", "aij", "aih"),
 )
 
 /**

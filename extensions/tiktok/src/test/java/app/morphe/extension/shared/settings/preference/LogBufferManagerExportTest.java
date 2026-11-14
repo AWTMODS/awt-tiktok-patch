@@ -1,6 +1,7 @@
 package app.morphe.extension.shared.settings.preference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -30,6 +31,105 @@ import java.util.concurrent.TimeUnit;
 public class LogBufferManagerExportTest {
     @Rule public final SettingsContextRule settingsContext = new SettingsContextRule();
     @Rule public final TemporaryFolder temporary = new TemporaryFolder();
+
+    @Test public void aTrimmedReportKeepsWholeEventsStackTracesIncluded() {
+        // An exception event carries its stack trace on the lines below it. Wherever the limit
+        // falls, the first event kept starts at its own first line, never at one of its frames.
+        app.morphe.extension.shared.Utils.setContext(RuntimeEnvironment.getApplication());
+        app.morphe.extension.shared.settings.BaseSettings.DEBUG_LOG_FILTERS.save("all");
+        app.morphe.extension.shared.diagnostics.HookStatus.clear();
+        LogBufferManager.clearLogBuffer();
+        try {
+            for (int index = 0; index < 40; index++) {
+                StringBuilder trace = new StringBuilder("phase=failed " + index);
+                for (int frame = 0; frame < 12; frame++) {
+                    trace.append("\n\tat app.Fixture.step").append(frame).append("(Fixture.java)");
+                }
+                LogBufferManager.appendEvent(app.morphe.extension.shared.diagnostics.DiagnosticCategory.DOWNLOADS,
+                        "Fixture", "ERROR", trace.toString());
+            }
+            String whole = LogBufferManager.buildExportText();
+            String note = "clipboard_note: older events omitted; use Save full report for everything\n";
+            for (int limit = whole.length() - 1; limit > whole.length() - 12_000; limit -= 37) {
+                String trimmed = LogBufferManager.buildExportText(limit);
+                assertTrue("over the limit of " + limit, trimmed.length() <= limit);
+                int cut = trimmed.indexOf(note);
+                assertTrue("no note at a limit of " + limit, cut >= 0);
+                String after = trimmed.substring(cut + note.length());
+                assertTrue("an event cut in half at a limit of " + limit + ": "
+                                + after.substring(0, Math.min(80, after.length())),
+                        after.startsWith("downloads | ") || after.startsWith("\n["));
+            }
+        } finally {
+            LogBufferManager.clearLogBuffer();
+        }
+    }
+
+    @Test public void sectionsThatFitWithoutTheEventsStayWholeWithinTheLimit() {
+        // Between the length of the sections around the events and that plus the note, no event
+        // fits. The report still has to fit, or the quick copy cuts off its first lines.
+        app.morphe.extension.shared.Utils.setContext(RuntimeEnvironment.getApplication());
+        app.morphe.extension.shared.settings.BaseSettings.DEBUG_LOG_FILTERS.save("all");
+        app.morphe.extension.shared.diagnostics.HookStatus.clear();
+        LogBufferManager.clearLogBuffer();
+        try {
+            StringBuilder message = new StringBuilder("phase=failed");
+            while (message.length() < 500) message.append(" x");
+            LogBufferManager.appendEvent(app.morphe.extension.shared.diagnostics.DiagnosticCategory.DOWNLOADS,
+                    "Fixture", "ERROR", message.toString());
+            // Built on the main thread, a report starts the other-bundles scan and says it's
+            // still being read, so a scan landing between two builds changed one of them.
+            settleOtherBundles();
+            String whole = LogBufferManager.buildExportText();
+            int section = whole.indexOf("\n\n[SELECTED EVENTS]\n");
+            assertTrue(section > 0);
+            int next = whole.indexOf("\n[", section + 2);
+            assertTrue(next > section);
+            int around = whole.length() - (next - section);
+            String gone = "\nclipboard_note: events omitted; use Save full report for everything\n";
+            for (int limit = around; limit < whole.length(); limit++) {
+                String trimmed = LogBufferManager.buildExportText(limit);
+                assertTrue("over the limit of " + limit + ": " + trimmed.length(), trimmed.length() <= limit);
+                // The note goes in from the first limit it fits under. The two builds can be a
+                // millisecond apart, and the stamp is the same length either way.
+                String kept = limit >= around + gone.length() ? gone : "";
+                assertEquals("at a limit of " + limit,
+                        unstamped(whole.substring(0, section) + kept + whole.substring(next)), unstamped(trimmed));
+            }
+        } finally {
+            LogBufferManager.clearLogBuffer();
+        }
+    }
+
+    @Test public void aQuickCopyOfACrashTooLongOnItsOwnStaysWithinTheLimit() throws Exception {
+        // No events to drop, so the copy keeps the report's end behind a short head of its own,
+        // and the head counts toward the limit.
+        Context context = RuntimeEnvironment.getApplication();
+        app.morphe.extension.shared.Utils.setContext(context);
+        app.morphe.extension.shared.settings.BaseSettings.DEBUG_LOG_FILTERS.save("all");
+        app.morphe.extension.shared.diagnostics.HookStatus.clear();
+        LogBufferManager.clearLogBuffer();
+        try {
+            StringBuilder crash = new StringBuilder("complete: true\njava.lang.IllegalStateException: fixture");
+            for (int frame = 0; crash.length() < 70_000; frame++) {
+                crash.append("\n\tat app.Fixture.step").append(frame).append("(Fixture.java)");
+            }
+            LogBufferManager.persistCrashReport(context, crash.toString());
+            assertTrue(LogBufferManager.buildExportText().length() > 60_000);
+            LogBufferManager.exportToClipboard();
+            android.content.ClipboardManager clipboard =
+                    (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            String copied = clipboard.getPrimaryClip().getItemAt(0).getText().toString();
+            assertTrue("copied " + copied.length() + " characters", copied.length() <= 60_000);
+            assertTrue(copied, copied.startsWith("MORPHE DIAGNOSTIC REPORT\n"
+                    + "clipboard_note: older content omitted"));
+            assertTrue(copied, copied.contains("[BUILD DETAILS]"));
+        } finally {
+            // Takes the saved crash with it.
+            LogBufferManager.clearLogBuffer();
+        }
+    }
+
     @Test public void anOlderAndroidSaysNothingAboutTheLastExit() {
         // The history arrived in API 30 and this bundle runs from 23, so the section has to be
         // absent rather than empty or guessed at.
@@ -42,7 +142,53 @@ public class LogBufferManagerExportTest {
         String report = LogBufferManager.buildExportText();
         assertNotEquals("nothing was reported at all", "", report);
         assertTrue("an API 28 build claimed to know why the process went away: " + report,
-                report.indexOf("[LAST EXIT]") < 0);
+                report.indexOf("[LAST EXIT") < 0);
+    }
+
+    @Test @Config(sdk = 30)
+    public void theReportListsTheLastFiveExitsNewestFirst() throws Exception {
+        // One exit can't show a pattern, such as a memory kill every time a LIVE opens.
+        app.morphe.extension.shared.Utils.setContext(RuntimeEnvironment.getApplication());
+        app.morphe.extension.shared.settings.BaseSettings.DEBUG_LOG_FILTERS.save("all");
+        app.morphe.extension.shared.diagnostics.HookStatus.clear();
+        LogBufferManager.clearLogBuffer();
+        android.app.ActivityManager manager = (android.app.ActivityManager) RuntimeEnvironment
+                .getApplication().getSystemService(Context.ACTIVITY_SERVICE);
+        String main = RuntimeEnvironment.getApplication().getPackageName();
+        // Added oldest first, with helpers between, so neither the order they were recorded in
+        // nor a short list of sixteen can decide which five are shown.
+        for (int i = 1; i <= 6; i++) {
+            org.robolectric.Shadows.shadowOf(manager).addApplicationExitInfo(
+                    org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder.newBuilder()
+                            .setReason(13)
+                            .setTimestamp(1757260800000L + i * 60_000L)
+                            .setProcessName(main)
+                            .setDescription("MemoryLimiter:AnonSwap kill " + i)
+                            .build());
+            for (int helper = 0; helper < 4; helper++) {
+                org.robolectric.Shadows.shadowOf(manager).addApplicationExitInfo(
+                        org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder.newBuilder()
+                                .setReason(10)
+                                .setTimestamp(1757260800000L + i * 60_000L + helper + 1)
+                                .setProcessName(main + ":push")
+                                .setDescription("helper")
+                                .build());
+            }
+        }
+        app.morphe.extension.shared.diagnostics.HookStatus.missingViewId("comments", "jlk");
+
+        String report = LogBufferManager.buildExportText();
+        int start = report.indexOf("[LAST EXITS]\n");
+        assertTrue(report, start >= 0);
+        String[] lines = report.substring(start + "[LAST EXITS]\n".length()).split("\n");
+        for (int shown = 0; shown < 5; shown++) {
+            assertTrue("exit " + shown + " is not the next newest: " + report,
+                    lines[shown].startsWith("at: ")
+                            && lines[shown].endsWith("description: MemoryLimiter:AnonSwap kill " + (6 - shown)));
+        }
+        assertEquals("a sixth exit was listed: " + report, "", lines[5]);
+        assertTrue("the oldest exit was listed: " + report, report.indexOf("kill 1") < 0);
+        assertTrue("a helper's exit was listed: " + report, report.indexOf("description: helper") < 0);
     }
 
     @Test @Config(sdk = 30)
@@ -84,7 +230,7 @@ public class LogBufferManagerExportTest {
         app.morphe.extension.shared.diagnostics.HookStatus.missingViewId("comments", "jlk");
         String report = LogBufferManager.buildExportText();
         assertTrue("the report does not say why the process went away: " + report,
-                report.contains("[LAST EXIT]"));
+                report.contains("[LAST EXITS]\n"));
         assertTrue("the reason was not named: " + report, report.contains("reason: OTHER"));
         assertTrue("the description the kill carried was dropped: " + report,
                 report.contains("MemoryLimiter:AnonSwap"));
@@ -141,6 +287,22 @@ public class LogBufferManagerExportTest {
         LogBufferManager.exportToFile();
         app.morphe.extension.shared.Utils.awaitBackgroundTasksForTests();
         assertEquals("the slot stayed taken after the stalled save returned", 2, media.inserts.get());
+    }
+
+    /** Off the main thread the section waits for the scan, so every report after this agrees. */
+    private static void settleOtherBundles() {
+        Thread scan = new Thread(() -> app.morphe.extension.shared.diagnostics.OtherBundles.lines(""));
+        scan.start();
+        try {
+            scan.join(TimeUnit.SECONDS.toMillis(30));
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        assertFalse("the other-bundles scan never finished", scan.isAlive());
+    }
+
+    private static String unstamped(String report) {
+        return report.replaceAll("(?m)^generated_utc: .*$", "generated_utc: -");
     }
 
     private static void reportAMissingView() {

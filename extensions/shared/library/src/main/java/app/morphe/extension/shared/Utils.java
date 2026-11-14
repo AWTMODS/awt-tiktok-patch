@@ -293,6 +293,10 @@ public class Utils {
             return backgroundThreadPool.submit(() -> {
                 try {
                     return call.call();
+                } catch (Throwable failure) {
+                    // A caller that drops the future, like the media cache's start-up pass, would never see it.
+                    Logger.printException(() -> call.getClass().getSimpleName() + ": " + failure.getMessage(), failure);
+                    throw failure;
                 } finally {
                     backgroundTasksInFlight.decrementAndGet();
                 }
@@ -535,6 +539,15 @@ public class Utils {
     public static Context getWindowContext() {
         Activity activity = getActivity();
         return activity != null ? activity : getContext();
+    }
+
+    /**
+     * Whether the extension hook has handed over the app's context yet. A hook TikTok can reach
+     * while its Application is still attaching asks this before it reads a setting, since the
+     * settings load their preferences from that context once and for good.
+     */
+    public static boolean hasContext() {
+        return context != null;
     }
 
     public static Context getContext() {
