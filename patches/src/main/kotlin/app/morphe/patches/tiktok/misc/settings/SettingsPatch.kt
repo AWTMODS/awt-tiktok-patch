@@ -351,9 +351,9 @@ private fun settingsIconResourceId(): Int {
 @Suppress("unused")
 val settingsPatch = bytecodePatch(
     name = "Settings",
-    description = "Adds the Adrmodtt settings page to TikTok, at the top of Settings and " +
+    description = "Adds the AWTMODS settings page to TikTok, at the top of Settings and " +
         "privacy. Pressing and holding For You at the top of the feed opens it too. That's where " +
-        "you turn Adrmodtt's features on and off. Works as soon as you patch it in, with no switch.",
+        "you turn AWTMODS's features on and off. Works as soon as you patch it in, with no switch.",
     default = true,
 ) {
     category("Settings")
@@ -616,7 +616,7 @@ val settingsPatch = bytecodePatch(
         val moveResultIndex = getStringInvokeIndex + 1
         val titleStringRegister = compose.getInstruction<OneRegisterInstruction>(moveResultIndex).registerA
 
-        composeMutable.addInstruction(moveResultIndex + 1, "const-string v$titleStringRegister, \"Adrmodtt\"")
+        composeMutable.addInstruction(moveResultIndex + 1, "const-string v$titleStringRegister, \"AWTMODS\"")
 
         OpenDebugCellVmDefaultStateFingerprint.methodOrNull?.let { defaultState ->
             defaultState.implementationOrPatchException("Settings")

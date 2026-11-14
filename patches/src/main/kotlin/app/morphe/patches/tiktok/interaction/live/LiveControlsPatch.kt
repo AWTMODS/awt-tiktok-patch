@@ -2404,23 +2404,23 @@ val liveControlsPatch = bytecodePatch(
         // 2026-10-18): its replacement span draws it in the bio view's own light-theme text
         // color, skipping the link color. The extension makes the link color the view's text
         // color while the switch is on in dark mode.
-        hookBioLink(LiveProfileBioFingerprint.method)
+        LiveProfileBioFingerprint.methodOrNull?.let { hookBioLink(it) }
         // Its labels, the shop rating and sold count chips among them, come with the server's
         // colors for the light card: dark text and icons on a faint see-through chip, dark on
         // the dark card (Login2, 2026-10-19). The extension makes each chip's color what it is
         // over the light card while the switch is on in dark mode.
-        hookCardLabels(LiveProfileLabelsFingerprint.method)
+        LiveProfileLabelsFingerprint.methodOrNull?.let { hookCardLabels(it) }
         // Its upcoming event box is a fixed white shape under text in the card theme's colors,
         // light on white on the dark card (Login2, 2026-10-20). The extension gives the box a
         // see-through light fill while the switch is on in dark mode and its text came out light.
-        hookEventBox(LiveProfileEventFingerprint.method)
+        LiveProfileEventFingerprint.methodOrNull?.let { hookEventBox(it) }
         // Its badge tiles carry server art and text drawn for the white card, the low levels'
         // tile see-through, so both went dark gray on the dark card (Login2, 2026-10-20). The
         // extension puts each tile on a dark copy of its shape while the switch is on in dark mode.
-        hookBadgeTiles(LiveProfileBadgeFingerprint.method)
+        LiveProfileBadgeFingerprint.methodOrNull?.let { hookBadgeTiles(it) }
         // A viewer's long-press menu is a plain dialog, so its navigation bar stayed light under
         // the dark menu (S22, 2026-10-24). The factory the room gets it from hands it over.
-        hookLongPressMenu(LiveLongPressMenuFingerprint.method)
+        LiveLongPressMenuFingerprint.methodOrNull?.let { hookLongPressMenu(it) }
         // The gift guide bubble ("Support this LIVE") stays white, but its text took the darkened
         // room's white (#362), so its view inflates over the room's light theme.
         val bubble = guideBubbleView(LiveGuideBubbleFingerprint.method) { classDefByOrNull(it) }
