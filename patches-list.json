@@ -1,5 +1,5 @@
 {
-  "version": "v0.83.0",
+  "version": "v1.1.0",
   "appNames": {
     "com.zhiliaoapp.musically": "TikTok"
   },
@@ -14,6 +14,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -75,6 +77,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -173,6 +177,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -223,6 +229,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -632,6 +640,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -690,6 +700,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -739,6 +751,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -923,6 +937,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -972,6 +988,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1030,6 +1048,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1105,6 +1125,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1144,6 +1166,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1436,6 +1460,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1485,6 +1511,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1534,6 +1562,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1601,6 +1631,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1650,6 +1682,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1698,6 +1732,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1746,6 +1782,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1785,6 +1823,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1824,6 +1864,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -1874,6 +1916,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2194,6 +2238,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2279,6 +2325,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2355,6 +2403,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2403,6 +2453,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2442,6 +2494,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2536,6 +2590,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2612,6 +2668,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2688,6 +2746,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2772,6 +2832,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2810,6 +2872,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2849,6 +2913,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2898,6 +2964,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2947,6 +3015,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -2997,6 +3067,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3091,6 +3163,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3248,6 +3322,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3297,6 +3373,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3346,6 +3424,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3394,6 +3474,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3433,6 +3515,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -3472,6 +3556,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4052,6 +4138,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4362,6 +4450,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4438,6 +4528,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4531,6 +4623,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4569,6 +4663,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4608,6 +4704,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4665,6 +4763,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4704,6 +4804,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4753,6 +4855,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4847,6 +4951,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4896,6 +5002,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4944,6 +5052,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -4984,6 +5094,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5078,6 +5190,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5127,6 +5241,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5176,6 +5292,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5243,6 +5361,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5292,6 +5412,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5341,6 +5463,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5390,6 +5514,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5448,6 +5574,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5731,6 +5859,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5780,6 +5910,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5883,6 +6015,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5932,6 +6066,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -5999,6 +6135,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6048,6 +6186,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6097,6 +6237,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6136,6 +6278,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6752,6 +6896,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6801,6 +6947,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6850,6 +6998,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6910,7 +7060,7 @@
           "description": null,
           "required": false,
           "type": "kotlin.String",
-          "default": "🔥",
+          "default": "\ud83d\udd25",
           "values": null
         }
       ]
@@ -6926,6 +7076,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -6993,6 +7145,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7041,6 +7195,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7080,6 +7236,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7138,6 +7296,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7187,6 +7347,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7236,6 +7398,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7285,6 +7449,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7334,6 +7500,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7392,6 +7560,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7630,6 +7800,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7679,6 +7851,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7736,6 +7910,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7775,6 +7951,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7826,6 +8004,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -7965,6 +8145,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8024,6 +8206,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8118,6 +8302,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8211,6 +8397,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8251,6 +8439,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8336,6 +8526,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8412,6 +8604,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8461,6 +8655,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8510,6 +8706,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8559,6 +8757,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8608,6 +8808,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8657,6 +8859,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8715,6 +8919,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8854,6 +9060,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8903,6 +9111,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -8953,6 +9163,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9083,6 +9295,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9158,6 +9372,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9197,6 +9413,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9290,6 +9508,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9328,6 +9548,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9366,6 +9588,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9414,6 +9638,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9453,6 +9679,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9511,6 +9739,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9550,6 +9780,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9608,6 +9840,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9656,6 +9890,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9695,6 +9931,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9780,6 +10018,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -9846,6 +10086,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10071,6 +10313,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10200,6 +10444,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10249,6 +10495,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10325,6 +10573,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10401,6 +10651,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10450,6 +10702,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10499,6 +10753,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10593,6 +10849,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10695,6 +10953,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10744,6 +11004,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10811,6 +11073,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10860,6 +11124,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10909,6 +11175,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -10958,6 +11226,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11007,6 +11277,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11056,6 +11328,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11105,6 +11379,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11154,6 +11430,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11203,6 +11481,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11252,6 +11532,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11301,6 +11583,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11350,6 +11634,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11410,6 +11696,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11551,6 +11839,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11600,6 +11890,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11711,6 +12003,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11750,6 +12044,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11799,6 +12095,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11848,6 +12146,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
@@ -11897,6 +12197,8 @@
       ],
       "compatiblePackages": {
         "com.zhiliaoapp.musically": [
+          "47.7.2",
+          "47.7.3",
           "47.8.3"
         ]
       },
