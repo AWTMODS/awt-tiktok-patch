@@ -27,7 +27,7 @@ import org.junit.rules.TemporaryFolder
 
 class BuildDetailsPatchTest {
     @get:Rule val temporary = TemporaryFolder()
-    private val target = packageMetadata("com.zhiliaoapp.musically", "47.7.3", "2024707030")
+    private val target = packageMetadata("com.zhiliaoapp.musically", "47.8.3", "2024708030")
     private val fingerprint = "A1234567890123456789B" + "c".repeat(43)
 
     @Test fun `bundle manifest paths preserve plus spaces percent and unicode and release the jar`() {
@@ -239,7 +239,7 @@ class BuildDetailsPatchTest {
 
     @Test fun `resource choices add only raw metadata dependencies and live retains its existing bytecode`() {
         listOf(p2pRelayBlockerPatch, languagePackPurgerPatch,
-            studioCreationDebloatPatch, hidePlayStoreUpdatePatch, changeAppNamePatch, customLauncherIconPatch,
+            studioCreationDebloatPatch, hidePlayStoreUpdatePatch, changeAppNamePatch,
             trustUserCertificatesPatch).forEach { patch ->
             assertTrue("${patch.name} has no metadata dependency", buildDetailsPatch in dependencies(patch))
             assertEquals("${patch.name} brings more than the build record", emptySet<Patch>(), beyondBuildRecord(patch))
@@ -261,6 +261,15 @@ class BuildDetailsPatchTest {
         assertEquals("AMOLED's own hooks are the palette repaint, the comment bar, the web pages and the switch",
             4, amoledOwn.size)
         assertTrue(amoledOwn.all { it.name == null })
+        // Since Discussion #114 the launcher icon can also be picked in Hushfeed's settings. The
+        // picker's one hook runs only with its option on, but a dependency can't follow an option,
+        // so the patch brings settings and the extension either way, and nothing past them.
+        val picker = customLauncherIconPatch.dependencies.single { settingsPatch in it.dependencies }
+        assertTrue("Custom launcher icon has no metadata dependency",
+            buildDetailsPatch in dependencies(customLauncherIconPatch))
+        assertTrue("the icon picker lost the extension", sharedExtensionPatch in picker.dependencies)
+        assertEquals("Custom launcher icon brings more than its picker", emptySet<Patch>(),
+            beyondBuildRecord(customLauncherIconPatch) - picker - shared)
         // The core asset strip returns out of the content credential service's start before it
         // loads the emptied library (#211). Bytecode too, and just as free of Adrmodtt's own code.
         val core = dependencies(coreAssetDebloatPatch)
@@ -306,8 +315,9 @@ class BuildDetailsPatchTest {
 
     private fun File.facts() = readLines().associate { it.substringBefore('=') to it.substringAfter('=') }
 
-    // Patcher metadata is public at the JVM boundary but its constructor is Kotlin-internal.
+    // Patcher metadata is public at the JVM boundary but its constructor is Kotlin-internal. Patcher
+    // 2.4.0 hands it the bundle's OBB files after the signature block; a context with no APK has none.
     private fun packageMetadata(name: String, version: String, code: String) =
-        PackageMetadata::class.java.constructors.single { it.parameterCount == 4 }
-            .newInstance(name, version, code, null) as PackageMetadata
+        PackageMetadata::class.java.constructors.single { it.parameterCount == 5 }
+            .newInstance(name, version, code, null, emptyMap<String, File>()) as PackageMetadata
 }

@@ -275,6 +275,13 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                     "Add a button beside the block control that saves the video on screen in one tap. Drag it wherever you like.",
                     Settings.DOWNLOAD_BUTTON));
         }
+        // #433: how big this card's buttons are, and where they stand.
+        addPreference(new ChoicePreference(context, "Size of the buttons on videos", Settings.VIDEO_BUTTON_SIZE,
+                new String[]{"Smallest", "Small", "Normal", "Large"},
+                new String[]{"32", "40", "48", "56"}));
+        addPreference(new TogglePreference(context, "Line them up over the right column",
+                "Stack the buttons above TikTok's own on the right, starting over the avatar. They follow the column instead of staying where you dragged them.",
+                Settings.VIDEO_BUTTONS_OVER_RAIL));
     }
 
     private void addVideoInfo(Context context) {
@@ -338,6 +345,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
             ));
             addPreference(new TogglePreference(
                     context,
+                    "Day before month",
+                    "Writes TikTok's date by the creator's name day first, like 29.09, with the year after it for an older video. Ages like 2d ago stay as they are.",
+                    Settings.PUBLISH_DATE_DAY_FIRST
+            ));
+            addPreference(new TogglePreference(
+                    context,
                     "Show dates on profile grids",
                     "Show the day each video was posted under its view count on profile grids.",
                     Settings.PUBLISH_DATE_ON_GRID
@@ -347,6 +360,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                     "Show video length on profile grids",
                     "Show how long each video runs under its view count on profile grids. Photo posts and videos TikTok sent no length for show none.",
                     Settings.VIDEO_LENGTH_ON_GRID
+            ));
+            addPreference(new TogglePreference(
+                    context,
+                    "Hide view counts on profile grids",
+                    "Takes the view count and its play icon off each video on profile grids. Dates, lengths and the engagement rate you turned on move up in its place.",
+                    Settings.HIDE_GRID_VIEW_COUNT
             ));
             if (SettingsStatus.gridSortEnabled) {
                 addPreference(new ChoicePreference(context, "Sort loaded videos on profile grids",
@@ -364,6 +383,22 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                                     "Longest first", "Shortest first", "Most viewed first", "Least viewed first",
                                     "Most liked first", "Least liked first"},
                             new String[]{"profile", "off", "newest", "oldest", "longest", "shortest", "most_viewed",
+                                    "least_viewed", "most_liked", "least_liked"}));
+                    addPreference(new ChoicePreference(context, "Sort loaded videos on Favorites grids",
+                            Settings.FAVORITES_GRID_SORT,
+                            new String[]{"Same as profile grids", "Original order", "Newest first", "Oldest first",
+                                    "Longest first", "Shortest first", "Most viewed first", "Least viewed first",
+                                    "Most liked first", "Least liked first"},
+                            new String[]{"profile", "off", "newest", "oldest", "longest", "shortest", "most_viewed",
+                                    "least_viewed", "most_liked", "least_liked"}));
+                }
+                if (SettingsStatus.collectionGridSortEnabled) {
+                    addPreference(new ChoicePreference(context, "Sort loaded videos in collections",
+                            Settings.COLLECTION_GRID_SORT,
+                            new String[]{"Same as Favorites grids", "Original order", "Newest first", "Oldest first",
+                                    "Longest first", "Shortest first", "Most viewed first", "Least viewed first",
+                                    "Most liked first", "Least liked first"},
+                            new String[]{"favorites", "off", "newest", "oldest", "longest", "shortest", "most_viewed",
                                     "least_viewed", "most_liked", "least_liked"}));
                 }
                 if (SettingsStatus.likedJumpEnabled) {
@@ -412,6 +447,12 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                     "Show the country as a flag",
                     "Shows the country's flag in place of its two letters, by the creator's name and by a commenter's time.",
                     Settings.REGION_AS_FLAG
+            ));
+            addPreference(new TogglePreference(
+                    context,
+                    "Show the country and date under the caption",
+                    "Moves the country and the post date off the creator's row onto a line of their own below the caption.",
+                    Settings.COUNTRY_DATE_UNDER_CAPTION
             ));
             addPreference(new TogglePreference(
                     context,
@@ -743,6 +784,9 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                     new String[]{"default", "transparent", "dark", "black"}));
             addPreference(new TogglePreference(context, "Keep captions in Clear display",
                     "Show the current spoken caption while the other controls are hidden.", Settings.KEEP_CAPTIONS_CLEAR_DISPLAY));
+            addPreference(new ChoicePreference(context, "Caption spot in Clear display", Settings.CAPTION_CLEAR_DISPLAY_SPOT,
+                    new String[]{"Where TikTok shows it", "Lower, near the bottom"},
+                    new String[]{"tiktok", "bottom"}));
             addPreference(captionHeight(context, "Caption height in Clear display",
                     "Lifts the kept caption above its usual spot in Clear display. Use 0 for the usual spot, or up to %1$d.",
                     Settings.CAPTION_CLEAR_DISPLAY_OFFSET));
@@ -859,14 +903,20 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
             addPreference(new TogglePreference(
                     context,
                     "Glass lens on the current tab",
-                    "On the main feed, a raised bubble of glass sits behind the tab you're on and slides to the next tab you pick. Needs Liquid glass look.",
+                    "On the main feed, a raised bubble of glass sits behind the tab you're on and slides to the next tab you pick. Works on any bottom bar, with or without Liquid glass look.",
                     Settings.GLASS_TAB_LENS
             ));
             addPreference(new TogglePreference(
                     context,
                     "Slide across the tabs",
-                    "On the main feed, slide a finger along the glass pill and the lens follows it. Let go and that tab opens. Taps and long presses work as before. Needs Glass lens on the current tab.",
+                    "On the main feed, slide a finger along the tabs and the lens follows it. Let go and that tab opens. Taps and long presses work as before. Needs Glass lens on the current tab.",
                     Settings.GLASS_TAB_SLIDE
+            ));
+            addPreference(new TogglePreference(
+                    context,
+                    "Liquid glass when held",
+                    "On the main feed, hold a finger on the tabs and the glass lens swells, then wobbles back when you let go. With Blur the video behind the bar on Android 13 and up, the video under it bends harder and splits into color at its edge. Needs Glass lens on the current tab.",
+                    Settings.GLASS_LIQUID_HOLD
             ));
             addPreference(new TogglePreference(
                     context,
@@ -987,8 +1037,8 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
         }
         if (SettingsStatus.swipeLeftEnabled) {
             addPreference(new ChoicePreference(context, "Swipe left", Settings.SWIPE_LEFT_ACTION,
-                    new String[]{"TikTok default (open the creator's profile)", "Do nothing", "Open comments"},
-                    new String[]{"default", "nothing", "comments"}));
+                    new String[]{"TikTok default (open the creator's profile)", "Do nothing", "Open comments", "Save to a collection"},
+                    new String[]{"default", "nothing", "comments", "collection"}));
         }
         if (SettingsStatus.longPressEnabled) {
             // Double tap's actions and a like, which TikTok's own double tap already does.
@@ -1041,6 +1091,13 @@ public final class InterfacePreferenceCategory extends ConditionalPreferenceCate
                     "A long press on Favorites plays the video at the hold speed instead of offering a new collection. "
                             + "It needs Long press on TikTok default and Seek from the edges off.",
                     Settings.RAIL_HOLD_FAVORITES));
+            // #433: TikTok's own long press on Favorites, which the hook above can skip.
+            if (SettingsStatus.advancedDownloadsEnabled) {
+                addPreference(new TogglePreference(context, "Hold TikTok's save button to download",
+                        "Press and hold the save button in the right column to save the video with your download "
+                                + "settings. A tap still adds it to Favorites. It wins over Hold speed on Favorites.",
+                        Settings.HOLD_SAVE_TO_DOWNLOAD));
+            }
         }
         // Three more long presses, each its own patch. They sat under Player on the App page,
         // two pages away from the Long press row they belong beside.

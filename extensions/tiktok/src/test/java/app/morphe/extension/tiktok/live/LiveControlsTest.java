@@ -41,12 +41,14 @@ public class LiveControlsTest {
         SettingsStatus.liveControlsEnabled = false;
         Settings.STOP_LIVE_AUTO_ENTER.save(Settings.STOP_LIVE_AUTO_ENTER.defaultValue);
         Settings.HIDE_LIVE_SERVICE_PLUS.save(Settings.HIDE_LIVE_SERVICE_PLUS.defaultValue);
+        Settings.HIDE_LIVE_AI_SUMMARY.save(Settings.HIDE_LIVE_AI_SUMMARY.defaultValue);
         Settings.SHOW_EXACT_LIVE_VIEWERS.save(Settings.SHOW_EXACT_LIVE_VIEWERS.defaultValue);
         Settings.OFFER_LIVE_QUALITY.save(Settings.OFFER_LIVE_QUALITY.defaultValue);
         Settings.REMEMBER_LIVE_QUALITY.save(Settings.REMEMBER_LIVE_QUALITY.defaultValue);
         Settings.REMEMBERED_LIVE_QUALITY.save(Settings.REMEMBERED_LIVE_QUALITY.defaultValue);
         Settings.OFFER_LIVE_CLEAR_SCREEN.save(Settings.OFFER_LIVE_CLEAR_SCREEN.defaultValue);
         Settings.KEEP_LIVE_CLEAR_SCREEN.save(Settings.KEEP_LIVE_CLEAR_SCREEN.defaultValue);
+        Settings.OFFER_LIVE_FULL_SCREEN.save(Settings.OFFER_LIVE_FULL_SCREEN.defaultValue);
         Settings.DARK_LIVE_PANELS.save(Settings.DARK_LIVE_PANELS.defaultValue);
         Settings.RECORD_LIVE.save(Settings.RECORD_LIVE.defaultValue);
         coldStart();
@@ -69,6 +71,31 @@ public class LiveControlsTest {
         setPaused(false);
         SettingsStatus.liveControlsEnabled = false;
         assertFalse(LiveRecordChip.enabled());
+    }
+
+    /** #418: the LIVE preview's Summary card shows until switched off, and Pause shows it again. */
+    @Test public void summaryCardHidesOnlyWhileItsSwitchIsOn() {
+        assertFalse(Settings.HIDE_LIVE_AI_SUMMARY.defaultValue);
+        assertFalse("the card was hidden with the switch off", LiveControls.hideAiSummary());
+        Settings.HIDE_LIVE_AI_SUMMARY.save(true);
+        assertTrue("the card still showed with the switch on", LiveControls.hideAiSummary());
+        setPaused(true);
+        assertFalse("Pause left the card hidden", LiveControls.hideAiSummary());
+        setPaused(false);
+        SettingsStatus.liveControlsEnabled = false;
+        assertFalse("the card was hidden without the LIVE controls patch", LiveControls.hideAiSummary());
+    }
+
+    /** #418: the newer Summary card answers to the same switch as the older one. */
+    @Test public void newerSummaryCardFollowsTheSameSwitch() {
+        assertFalse("the newer card was hidden with the switch off", LiveControls.hideNewAiSummary());
+        Settings.HIDE_LIVE_AI_SUMMARY.save(true);
+        assertTrue("the newer card still showed with the switch on", LiveControls.hideNewAiSummary());
+        setPaused(true);
+        assertFalse("Pause left the newer card hidden", LiveControls.hideNewAiSummary());
+        setPaused(false);
+        SettingsStatus.liveControlsEnabled = false;
+        assertFalse("the newer card was hidden without the LIVE controls patch", LiveControls.hideNewAiSummary());
     }
 
     /** #57: off, TikTok's server setting decides which rooms offer clear screen. */
@@ -137,6 +164,29 @@ public class LiveControlsTest {
         SettingsStatus.liveControlsEnabled = true;
         Settings.KEEP_LIVE_CLEAR_SCREEN.save(false);
         assertFalse("read at the call, so the next room follows", LiveControls.keepClearScreen());
+    }
+
+    /**
+     * #57: TikTok's yes (LIVE Studio and screen share rooms) always stands. Its no stands while the
+     * switch is off, under Pause and without the patch; with the switch on every room gets the button.
+     */
+    @Test public void fullScreenButtonFollowsItsSwitchAndKeepsTikToksYes() {
+        assertFalse(Settings.OFFER_LIVE_FULL_SCREEN.defaultValue);
+        assertTrue("TikTok's own yes was dropped", LiveControls.offerFullScreen(true));
+        assertFalse("a phone LIVE got the button with the switch off", LiveControls.offerFullScreen(false));
+        Settings.OFFER_LIVE_FULL_SCREEN.save(true);
+        assertTrue("a phone LIVE still had no button", LiveControls.offerFullScreen(false));
+        assertTrue(LiveControls.offerFullScreen(true));
+        assertFalse("full screen turned clear screen on", LiveControls.offerClearScreen());
+        setPaused(true);
+        assertFalse("Pause left the button on", LiveControls.offerFullScreen(false));
+        assertTrue("Pause dropped TikTok's own yes", LiveControls.offerFullScreen(true));
+        setPaused(false);
+        SettingsStatus.liveControlsEnabled = false;
+        assertFalse("the button showed without the LIVE controls patch", LiveControls.offerFullScreen(false));
+        SettingsStatus.liveControlsEnabled = true;
+        Settings.OFFER_LIVE_FULL_SCREEN.save(false);
+        assertFalse("read at the call, so the next room follows", LiveControls.offerFullScreen(false));
     }
 
     /**

@@ -89,6 +89,136 @@ public class GlassPillDrawingTest {
                 Math.abs(light(clear) - light(GRAY)) < Math.abs(light(frosted) - light(GRAY)));
     }
 
+    /** A W x H bar of five 80 px tabs, the middle one selected, wearing {@code background}. */
+    private static void barWearing(Drawable background) {
+        android.content.Context context = RuntimeEnvironment.getApplication();
+        android.widget.LinearLayout bar = new android.widget.LinearLayout(context);
+        for (int i = 0; i < 5; i++) {
+            bar.addView(new android.view.View(context), new android.widget.LinearLayout.LayoutParams(80, H));
+        }
+        bar.measure(android.view.View.MeasureSpec.makeMeasureSpec(W, android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(H, android.view.View.MeasureSpec.EXACTLY));
+        bar.layout(0, 0, W, H);
+        bar.getChildAt(2).setSelected(true);
+        bar.setBackground(background);
+    }
+
+    /**
+     * The lens on TikTok's own bar (#416): TikTok's color everywhere but behind the selected
+     * tab, a lighter bubble there on a dark bar, and a darker one on a white bar, where white
+     * glass wouldn't show. A bar background that isn't a plain color gets the same.
+     */
+    @Test
+    public void theLensShowsOnTikToksOwnDarkAndWhiteBars() {
+        SeeThroughBottomBar.ColorLensBackground dark = new SeeThroughBottomBar.ColorLensBackground(Color.BLACK, false, 1f);
+        barWearing(dark);
+        Bitmap onDark = drawn(dark);
+        assertEquals("TikTok's color didn't draw", Color.BLACK, onDark.getPixel(40, H / 2));
+        int darkLens = onDark.getPixel(W / 2, H / 2);
+        assertTrue("no lens on the dark bar: " + Integer.toHexString(darkLens), light(darkLens) > light(Color.BLACK) + 60);
+
+        SeeThroughBottomBar.ColorLensBackground white = new SeeThroughBottomBar.ColorLensBackground(Color.WHITE, false, 1f);
+        barWearing(white);
+        Bitmap onWhite = drawn(white);
+        assertEquals(Color.WHITE, onWhite.getPixel(40, H / 2));
+        int whiteLens = onWhite.getPixel(W / 2, H / 2);
+        assertTrue("the lens on the white bar doesn't show: " + Integer.toHexString(whiteLens),
+                light(whiteLens) < light(Color.WHITE) - 30);
+
+        android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
+        shape.setColor(Color.WHITE);
+        SeeThroughBottomBar.LensOverBackground over = new SeeThroughBottomBar.LensOverBackground(shape, 1f);
+        barWearing(over);
+        Bitmap onShape = drawn(over);
+        assertEquals(Color.WHITE, onShape.getPixel(40, H / 2));
+        assertTrue("the lens on a white shape doesn't show",
+                light(onShape.getPixel(W / 2, H / 2)) < light(Color.WHITE) - 30);
+    }
+
+    /** The clear bar's lens (#416): the video untouched around it, lighter behind the selected tab. */
+    @Test
+    public void theLensShowsOnTheClearBar() {
+        SeeThroughBottomBar.ColorLensBackground clear =
+                new SeeThroughBottomBar.ColorLensBackground(Color.TRANSPARENT, true, 1f);
+        barWearing(clear);
+        Bitmap bitmap = drawn(clear);
+        assertEquals("the clear bar covered the video", GRAY, bitmap.getPixel(40, H / 2));
+        assertTrue("no lens on the clear bar", light(bitmap.getPixel(W / 2, H / 2)) > light(GRAY) + 30);
+        clear.setAlpha(0);
+        assertEquals("a faded bar still drew its lens", GRAY, drawn(clear).getPixel(W / 2, H / 2));
+    }
+
+    /**
+     * A W x H bar of five tabs labeled in {@code ink}, plus an Inbox badge's white number, wearing
+     * {@code background}.
+     */
+    private static android.widget.LinearLayout labeledBarWearing(Drawable background, int ink) {
+        android.content.Context context = RuntimeEnvironment.getApplication();
+        android.widget.LinearLayout bar = new android.widget.LinearLayout(context);
+        for (int i = 0; i < 5; i++) {
+            android.widget.TextView tab = new android.widget.TextView(context);
+            tab.setText("Tab " + i);
+            bar.addView(tab, new android.widget.LinearLayout.LayoutParams(80, H));
+        }
+        android.widget.TextView badge = new android.widget.TextView(context);
+        badge.setText("3");
+        bar.addView(badge, new android.widget.LinearLayout.LayoutParams(0, H));
+        ink(bar, ink);
+        badge.setTextColor(Color.WHITE);
+        bar.measure(android.view.View.MeasureSpec.makeMeasureSpec(W, android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(H, android.view.View.MeasureSpec.EXACTLY));
+        bar.layout(0, 0, W, H);
+        bar.setBackground(background);
+        return bar;
+    }
+
+    /** Gives the bar's five tab labels {@code ink}. */
+    private static void ink(android.widget.LinearLayout bar, int ink) {
+        for (int i = 0; i < 5; i++) ((android.widget.TextView) bar.getChildAt(i)).setTextColor(ink);
+    }
+
+    private static Bitmap drawnOver(int page, Drawable background) {
+        Bitmap bitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
+        bitmap.eraseColor(page);
+        background.setBounds(0, 0, W, H);
+        background.draw(new Canvas(bitmap));
+        return bitmap;
+    }
+
+    /**
+     * Home's Community grid (#436): TikTok gives its tabs black labels there, over a white page,
+     * and the dark pill under them read as a gray smear behind black icons. Dark labels, dimmed
+     * ones too, get the pale pill and white glass with an edge that shows on white; white labels
+     * keep the dark ones, and the pill follows the labels as TikTok changes them.
+     */
+    @Test
+    public void thePillGoesPaleUnderTikToksDarkTabs() {
+        SeeThroughBottomBar.FloatingBackground plain = new SeeThroughBottomBar.FloatingBackground(1f);
+        android.widget.LinearLayout bar = labeledBarWearing(plain, 0xFF161823);
+        int onGrid = drawnOver(Color.WHITE, plain).getPixel(W / 2, H / 2);
+        assertTrue("the pill under black tabs is " + Integer.toHexString(onGrid),
+                light(onGrid) > light(Color.WHITE) - 60);
+
+        // Back on the video feed TikTok's labels go white again.
+        ink(bar, Color.WHITE);
+        int onFeed = drawnOver(GRAY, plain).getPixel(W / 2, H / 2);
+        assertTrue("the pill under white tabs is " + Integer.toHexString(onFeed),
+                light(onFeed) < light(GRAY) - 60);
+
+        SeeThroughBottomBar.GlassBackground glass = new SeeThroughBottomBar.GlassBackground(1f);
+        labeledBarWearing(glass, 0x80161823);
+        Bitmap glassOnGrid = drawnOver(Color.WHITE, glass);
+        int middle = glassOnGrid.getPixel(W / 2, H / 2);
+        assertTrue("the glass under dimmed black tabs is " + Integer.toHexString(middle),
+                light(middle) > light(Color.WHITE) - 60);
+        int edge = Color.WHITE;
+        for (int y = H - 4; y < H; y++) {
+            int pixel = glassOnGrid.getPixel(W / 2, y);
+            if (light(pixel) < light(edge)) edge = pixel;
+        }
+        assertTrue("the glass's edge vanished on white", light(edge) < light(Color.WHITE) - 60);
+    }
+
     @Test
     public void aFadedGlassDrawsNothing() {
         SeeThroughBottomBar.GlassPill pill = new SeeThroughBottomBar.GlassPill(1f);

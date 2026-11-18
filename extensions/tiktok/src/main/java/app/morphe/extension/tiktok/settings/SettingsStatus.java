@@ -91,6 +91,7 @@ public class SettingsStatus {
     public static boolean storyControlsEnabled = false;
     public static boolean liveControlsEnabled = false;
     public static boolean keepPulledSoundsEnabled = false;
+    public static boolean originalAudioEnabled = false;
     public static boolean pictureInPictureEnabled = false;
     public static boolean resumeVideoAfterScrollEnabled = false;
     public static boolean externalBrowserEnabled = false;
@@ -99,6 +100,7 @@ public class SettingsStatus {
     public static boolean turnOffHapticsEnabled = false;
     public static boolean amoledDarkModeEnabled = false;
     public static boolean screenTransitionsEnabled = false;
+    public static boolean appIconPickerEnabled = false;
     public static boolean diagnosticsEnabled = false;
     public static boolean blockAuthorEnabled = false;
     public static boolean authorRegionEnabled = false;
@@ -126,6 +128,7 @@ public class SettingsStatus {
     public static boolean inboxFilterTabsEnabled = false;
     public static boolean messageSearchRebuildEnabled = false;
     public static boolean pinMoreChatsEnabled = false;
+    public static boolean messageTimesEnabled = false;
     public static boolean videoFitEnabled = false;
     public static boolean refreshRateEnabled = false;
     public static boolean cameraBrightnessEnabled = false;
@@ -142,6 +145,8 @@ public class SettingsStatus {
     public static boolean hideInboxStoriesEnabled = false;
     public static boolean chatDeclutterEnabled = false;
     public static boolean expandActivityListEnabled = false;
+    public static boolean bundleActivityLikesEnabled = false;
+    public static boolean splitActivityListEnabled = false;
     public static boolean commentToolsEnabled = false;
     public static boolean hideCommentEggsEnabled = false;
     public static boolean commentSortControlsEnabled = false;
@@ -477,6 +482,10 @@ public class SettingsStatus {
         keepPulledSoundsEnabled = true;
     }
 
+    public static void enableOriginalAudio() {
+        originalAudioEnabled = true;
+    }
+
     public static void enablePictureInPicture() {
         pictureInPictureEnabled = true;
     }
@@ -515,6 +524,10 @@ public class SettingsStatus {
 
     public static void enableScreenTransitions() {
         screenTransitionsEnabled = true;
+    }
+
+    public static void enableAppIconPicker() {
+        appIconPickerEnabled = true;
     }
 
     public static void enableAlwaysShowPublishDate() {
@@ -559,6 +572,14 @@ public class SettingsStatus {
 
     public static void enableExpandActivityList() {
         expandActivityListEnabled = true;
+    }
+
+    public static void enableBundleActivityLikes() {
+        bundleActivityLikesEnabled = true;
+    }
+
+    public static void enableSplitActivityList() {
+        splitActivityListEnabled = true;
     }
 
     public static void enableDuetStitch() {
@@ -624,6 +645,11 @@ public class SettingsStatus {
     /** The cap on pinned chats in the Inbox was found and hooked (#385). */
     public static void enablePinMoreChats() {
         pinMoreChatsEnabled = true;
+    }
+
+    /** Both chat message row slots were found and hooked, for Show message times. */
+    public static void enableMessageTimes() {
+        messageTimesEnabled = true;
     }
 
     public static void enableCommentTools() {
@@ -738,6 +764,13 @@ public class SettingsStatus {
         soundGridSortEnabled = true;
     }
 
+    /** A Favorites collection folder's adapter and its cell click were hooked, so a folder can be sorted (#180). */
+    public static boolean collectionGridSortEnabled = false;
+
+    public static void enableCollectionGridSort() {
+        collectionGridSortEnabled = true;
+    }
+
     public static void enableFeedSidebarSwipe() {
         feedSidebarSwipeEnabled = true;
     }
@@ -806,6 +839,20 @@ public class SettingsStatus {
 
     public static void enableInboxOnThisDay() {
         inboxOnThisDayEnabled = true;
+    }
+
+    /** Hide inbox items found the stories tray's two LIVE cells on this build and hooked their binds. */
+    public static boolean inboxSuggestedLivesEnabled = false;
+
+    public static void enableInboxSuggestedLives() {
+        inboxSuggestedLivesEnabled = true;
+    }
+
+    /** Hide inbox items found the stories tray's Widget cell on this build and hooked its bind. */
+    public static boolean inboxWidgetGuideEnabled = false;
+
+    public static void enableInboxWidgetGuide() {
+        inboxWidgetGuideEnabled = true;
     }
 
     /** Hide profile shortcuts found the profile picture's Thoughts bubble on this build and hooked it. */
@@ -960,6 +1007,10 @@ public class SettingsStatus {
 
     public static boolean accountCleanupEnabled = false;
     public static void enableAccountCleanup() { accountCleanupEnabled = true; }
+
+    /** Account cleanup's grid and Reposts tap hooks went in, so Tap a video to remove it can work (#401). */
+    public static boolean quickRemoveEnabled = false;
+    public static void enableQuickRemove() { quickRemoveEnabled = true; }
 
     private static final String SWITCH_SUFFIX = "Enabled";
 

@@ -109,6 +109,14 @@ public class AndroidTargetChangesGuardTest {
                     "safe: writes the search results' mItems, friendFeedData and, since #12, the "
                             + "Following feed's items field (mItems up to 46.8.3, items from "
                             + "46.9.3), each an instance field on the response the hook was given"),
+            new ReviewedWrites("interaction/DetailAutoAdvance.java", 1,
+                    "safe: fieldOfType() skips static fields, and armProfileQueue writes the state "
+                            + "enum on the background queue session TikTok's trigger was handed, "
+                            + "only for a hushfeed_profile_ scope whose state is still off"),
+            new ReviewedWrites("inbox/ActivityLikeBundler.java", 1,
+                    "safe: write() refuses a static field, then writes mergeCount and fromUsers on "
+                            + "a like row's title template and hasRead on the row and its template, "
+                            + "all instances in the Likes page TikTok just received"),
             new ReviewedWrites("live/LivePanelTheme.java", 2,
                     "safe: writes a LIVE profile card label's background and that background's "
                             + "colorCode, and lightLabel() skips either field when it's static"),
@@ -123,7 +131,11 @@ public class AndroidTargetChangesGuardTest {
             new ReviewedWrites("privacy/AppLock.java", 1,
                     "safe: writes mViews on the WindowManagerGlobal instance getInstance() "
                             + "returned, an instance field, with a list holding the same windows; "
-                            + "a refusal is caught and App lock finds the windows on its own passes"));
+                            + "a refusal is caught and App lock finds the windows on its own passes"),
+            new ReviewedWrites("privacy/QuickRemove.java", 1,
+                    "safe: writes mmItems on the profile grid adapter the tapped cell belongs "
+                            + "to, the same instance field GridSort writes, with a copy of the "
+                            + "list minus the removed video, only when that list can't change"));
 
     /**
      * Addresses written into the payload, and what is done with them.
@@ -183,7 +195,12 @@ public class AndroidTargetChangesGuardTest {
                         + "it carries the client id, scopes and redirect from TikTok's own request, "
                         + "and the WebView stops at the www.tiktok.com redirect. Spotify's "
                         + "certificates are publicly logged, so CT enforcement passes it");
-        REVIEWED_ADDRESSES.put("https://github.com/SysAdminDoc/AdrModTT/releases/tag/",
+        REVIEWED_ADDRESSES.put("https://localhost/",
+                "not a remote host: the base URL Orbu's telemetry uploads are pointed at with "
+                        + "Disable telemetry on (#379), the phone itself, which has nothing "
+                        + "listening there, so the connection is refused before any certificate "
+                        + "is shown");
+        REVIEWED_ADDRESSES.put("https://github.com/SysAdminDoc/HushFeed/releases/tag/",
                 "not fetched: the update card's release page, opened in the reader's browser "
                         + "when Morphe Manager isn't installed");
         REVIEWED_ADDRESSES.put("https://(?:(?:vm|vt)\\\\.tiktok\\\\.com/[A-Za-z0-9]+|(?:www\\\\.|m\\\\.)?"
@@ -240,7 +257,9 @@ public class AndroidTargetChangesGuardTest {
         // LIVE profile card label writes for #159, and the grid sort chip's re-sort for #180.
         // Four LIVE Audio only row writes for #265 on 2026-11-05, two Discover tab writes for #98.
         // The grid search's reshow on 2026-11-10, App lock's watched window list on 2026-11-12.
-        assertEquals("the audit counted twenty-four reflective writes on 2026-11-12", 24, total);
+        // Tap to remove's fixed-list grid copy on 2026-11-17, Group likes per comment's folded rows
+        // the same day, and the profile background queue's session switch for #292.
+        assertEquals("the audit counted twenty-seven reflective writes on 2026-11-17", 27, total);
     }
 
     @Test

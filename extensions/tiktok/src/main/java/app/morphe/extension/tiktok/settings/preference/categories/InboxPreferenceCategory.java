@@ -35,8 +35,12 @@ public final class InboxPreferenceCategory extends ConditionalPreferenceCategory
                 || SettingsStatus.hideSuggestedAccountsEnabled
                 || SettingsStatus.hideInboxStoriesEnabled
                 || SettingsStatus.inboxOnThisDayEnabled
+                || SettingsStatus.inboxSuggestedLivesEnabled
+                || SettingsStatus.inboxWidgetGuideEnabled
                 || SettingsStatus.chatDeclutterEnabled
                 || SettingsStatus.expandActivityListEnabled
+                || SettingsStatus.bundleActivityLikesEnabled
+                || SettingsStatus.splitActivityListEnabled
                 || SettingsStatus.notificationControlsEnabled
                 || SettingsStatus.keepUnsentEnabled
                 || SettingsStatus.suggestedVideoPushBlockEnabled
@@ -190,6 +194,22 @@ public final class InboxPreferenceCategory extends ConditionalPreferenceCategory
                     Settings.HIDE_INBOX_ON_THIS_DAY
             ));
         }
+        if (SettingsStatus.inboxSuggestedLivesEnabled) {
+            addPreference(new TogglePreference(
+                    context,
+                    "Hide LIVEs from accounts you don't follow",
+                    "LIVEs from accounts you don't follow leave the stories tray. LIVEs from accounts you follow stay.",
+                    Settings.HIDE_INBOX_SUGGESTED_LIVES
+            ));
+        }
+        if (SettingsStatus.inboxWidgetGuideEnabled) {
+            addPreference(new TogglePreference(
+                    context,
+                    "Hide the Widget circle",
+                    "The Widget circle at the end of the stories tray goes. TikTok's home screen widget still works.",
+                    Settings.HIDE_INBOX_WIDGET_GUIDE
+            ));
+        }
         if (SettingsStatus.inboxFilterEnabled || SettingsStatus.hideSuggestedAccountsEnabled) {
         addPreference(new TogglePreference(
                 context,
@@ -235,8 +255,19 @@ public final class InboxPreferenceCategory extends ConditionalPreferenceCategory
                             + "presses work as before.",
                     Settings.TURN_OFF_CHAT_SWIPE_REPLY
             ));
+            if (SettingsStatus.messageTimesEnabled) {
+                addPreference(new TogglePreference(
+                        context,
+                        "Show message times",
+                        "Puts the time each message was sent under it in a chat. TikTok's own "
+                                + "timestamps stay where they are.",
+                        Settings.SHOW_MESSAGE_TIMES
+                ));
+            }
         }
         if (SettingsStatus.notificationControlsEnabled || SettingsStatus.expandActivityListEnabled
+                || SettingsStatus.bundleActivityLikesEnabled
+                || SettingsStatus.splitActivityListEnabled
                 || SettingsStatus.suggestedVideoPushBlockEnabled) {
             addPreference(new SectionHeadingPreference(context, "Controls"));
         }
@@ -291,6 +322,27 @@ public final class InboxPreferenceCategory extends ConditionalPreferenceCategory
                     "Show the whole Activity and New followers lists instead of stopping at a "
                             + "View all button.",
                     Settings.EXPAND_ACTIVITY_LIST
+            ));
+        }
+        if (SettingsStatus.bundleActivityLikesEnabled) {
+            addPreference(new TogglePreference(
+                    context,
+                    "Group likes per comment",
+                    "Show one row for each comment or video people liked, with everyone who "
+                            + "liked it counted, instead of a new row for every few likes. Applies "
+                            + "the next time the Likes list loads.",
+                    Settings.BUNDLE_ACTIVITY_LIKES
+            ));
+        }
+        if (SettingsStatus.splitActivityListEnabled) {
+            addPreference(new TogglePreference(
+                    context,
+                    "Split the Activity page",
+                    "Show your newest comments at the top of the Activity page and likes below, "
+                            + "each scrolling on its own. The bar between them swaps the two lists or "
+                            + "hides the lower one until you bring it back. Picking another list from "
+                            + "Activity still shows just that list. Applies the next time the page opens.",
+                    Settings.SPLIT_ACTIVITY_LIST
             ));
         }
         if (SettingsStatus.autoStreakEnabled) {

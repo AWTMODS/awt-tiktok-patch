@@ -74,10 +74,11 @@ public final class SlideshowVideo {
      * or no screen to ask on leaves the save where it was going.
      */
     static boolean offer(Object aweme, Set<?> indices) {
-        return offer(aweme, indices, seconds(Settings.PHOTO_VIDEO_SECONDS.get()));
+        return offer(aweme, indices, seconds(Settings.PHOTO_VIDEO_SECONDS.get()), StoryShareSave.isStory(aweme));
     }
 
-    private static boolean offer(Object aweme, Set<?> indices, int seconds) {
+    /** {@code story} names it a story, not a photo post, when it turns out to be saved already. */
+    private static boolean offer(Object aweme, Set<?> indices, int seconds, boolean story) {
         if (!enabled()) return false;
         Object info = Reflect.property(aweme, "getPhotoModeImageInfo", "photoModeImageInfo");
         Object raw = Reflect.property(info, "getImageList", "imageList");
@@ -85,11 +86,11 @@ public final class SlideshowVideo {
         Activity activity = Utils.getVisibleActivity();
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) return false;
         Set<Object> picked = indices == null ? null : new HashSet<Object>(indices);
-        Utils.runOnMainThread(() -> ask(aweme, picked, seconds));
+        Utils.runOnMainThread(() -> ask(aweme, picked, seconds, story));
         return true;
     }
 
-    private static void ask(Object aweme, Set<?> picked, int seconds) {
+    private static void ask(Object aweme, Set<?> picked, int seconds, boolean story) {
         try {
             Activity activity = Utils.getVisibleActivity();
             if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
@@ -98,8 +99,8 @@ public final class SlideshowVideo {
             SettingsUi.syncDarkMode(activity);
             AlertDialog dialog = new AlertDialog.Builder(activity)
                     .setTitle(L10n.t("Save photos or a video?"))
-                    .setNegativeButton(L10n.t("Save photos"), (ignored, which) -> OriginalPhotos.savePicked(aweme, picked))
-                    .setPositiveButton(L10n.t("Save as video"), (ignored, which) -> start(aweme, picked, true, seconds))
+                    .setNegativeButton(L10n.t("Save photos"), (ignored, which) -> OriginalPhotos.savePicked(aweme, picked, story))
+                    .setPositiveButton(L10n.t("Save as video"), (ignored, which) -> start(aweme, picked, true, seconds, story))
                     .setNeutralButton(L10n.t("Cancel"), null)
                     .create();
             dialog.setOnShowListener(ignored -> SettingsUi.styleStandardAlertDialog(dialog));
@@ -107,7 +108,7 @@ public final class SlideshowVideo {
         } catch (RuntimeException failure) {
             // Download was pressed, so the photos still go out rather than nothing.
             Logger.printException(() -> "Could not ask between photos and a video", failure);
-            OriginalPhotos.savePicked(aweme, picked);
+            OriginalPhotos.savePicked(aweme, picked, story);
         }
     }
 
@@ -117,7 +118,7 @@ public final class SlideshowVideo {
      * video's path, so a failure says so itself instead of falling back.
      */
     static boolean start(Object aweme, Set<?> indices) {
-        return start(aweme, indices, true, seconds(Settings.PHOTO_VIDEO_SECONDS.get()));
+        return start(aweme, indices, true, seconds(Settings.PHOTO_VIDEO_SECONDS.get()), false);
     }
 
     /**
@@ -126,7 +127,7 @@ public final class SlideshowVideo {
      */
     static boolean saveStory(Object aweme) {
         int seconds = storySeconds(aweme);
-        return offer(aweme, null, seconds) || start(aweme, null, true, seconds);
+        return offer(aweme, null, seconds, true) || start(aweme, null, true, seconds, true);
     }
 
     /** How long TikTok keeps a story with no video of its own on screen, on its default settings. */
@@ -137,9 +138,9 @@ public final class SlideshowVideo {
     /**
      * With Check for already-saved videos on, a post saved here before is offered Open or Save
      * again first ({@code check}, false for Save again), and the video that's made is recorded
-     * under the post's id.
+     * under the post's id. {@code story} titles that choice for a story.
      */
-    private static boolean start(Object aweme, Set<?> indices, boolean check, int seconds) {
+    private static boolean start(Object aweme, Set<?> indices, boolean check, int seconds, boolean story) {
         Context context = Utils.getContext();
         if (context == null) return failed();
         if (android.os.Build.VERSION.SDK_INT < 29
@@ -186,11 +187,11 @@ public final class SlideshowVideo {
                 if (checking) {
                     Runnable saveAgain = () -> {
                         ACTIVE.remove(id);
-                        start(aweme, indices, false, seconds);
+                        start(aweme, indices, false, seconds, story);
                     };
                     asking.set(true);
-                    SavedVideoArchive.Check found = SavedVideoArchive.check(app, id, saveAgain,
-                            () -> ACTIVE.remove(id));
+                    SavedVideoArchive.Check found = SavedVideoArchive.check(app, id,
+                            SavedVideoArchive.photoTitle(story), saveAgain, () -> ACTIVE.remove(id));
                     if (found == SavedVideoArchive.Check.OFFERED) {
                         progress.dismiss();
                         return;
@@ -199,8 +200,8 @@ public final class SlideshowVideo {
                     if (found == SavedVideoArchive.Check.FAILED) return;
                     Utils.showToastShort(making);
                 }
-                SaveProgress.Outcome outcome = progress.run(index ->
-                        saved[0] = make(app, sources, sound, seconds, name, path, progress, silent));
+                SaveProgress.Outcome outcome = progress.run(index -> saved[0] = make(app, sources,
+                        Collections.singletonList(new Sound(sound, sources.size())), seconds, name, path, progress, silent));
                 if (saved[0] == null) {
                     Utils.showToastLong(outcome.stop == SaveProgress.Stop.SERVER_WAIT
                             ? SaveProgress.message(outcome, "")
@@ -209,7 +210,7 @@ public final class SlideshowVideo {
                             : L10n.t("Couldn't make the video. Try again."));
                 } else {
                     if (checkSaved) SavedVideoArchive.rememberQuietly(app, id, saved[0], archiveGeneration);
-                    SaveNotice.saved(silent[0]
+                    SaveNotice.savedVideo(silent[0]
                             ? L10n.f("Saved to %1$s, but without sound", path)
                             : L10n.f("Saved the photos as a video in %1$s", path), saved[0]);
                 }
@@ -242,8 +243,54 @@ public final class SlideshowVideo {
         if (photos.isEmpty()) throw new IOException("The original photos aren't available");
         String name = DownloadFilenameFormatter.formatSelectedVideoName(aweme);
         String path = DownloadFilenameFormatter.destinationPath(aweme, false);
-        return make(app, photos, soundSources(aweme), seconds(Settings.PHOTO_VIDEO_SECONDS.get()), name, path,
+        return make(app, photos, Collections.singletonList(new Sound(soundSources(aweme), photos.size())),
+                seconds(Settings.PHOTO_VIDEO_SECONDS.get()), name, path, SaveProgress.begin(1), new boolean[]{false});
+    }
+
+    /**
+     * One video of several picked photo posts (#430), made now on the media worker that's calling,
+     * for a run of picked posts. Each post's photos follow the one before's, with that post's own
+     * sound under them, and the video is named and filed the way its first post's would be.
+     */
+    static MediaFileWriter.Saved makeJoined(Context app, List<?> posts) throws IOException {
+        Plan plan = plan(posts);
+        if (plan.first == null) throw new IOException("The original photos aren't available");
+        String name = DownloadFilenameFormatter.formatSelectedVideoName(plan.first);
+        String path = DownloadFilenameFormatter.destinationPath(plan.first, false);
+        return make(app, plan.photos, plan.sounds, seconds(Settings.PHOTO_VIDEO_SECONDS.get()), name, path,
                 SaveProgress.begin(1), new boolean[]{false});
+    }
+
+    /** One post's run of photos in a video, and where the sound that goes under them comes from. */
+    static final class Sound {
+        final List<String> sources;
+        final int photos;
+
+        Sound(List<String> sources, int photos) {
+            this.sources = sources;
+            this.photos = photos;
+        }
+    }
+
+    /** What a video of several photo posts is made from: every photo in pick order, and each post's sound. */
+    static final class Plan {
+        final List<List<String>> photos = new ArrayList<>();
+        final List<Sound> sounds = new ArrayList<>();
+        /** The first post with photos, which names the video. Null when none has any. */
+        Object first;
+    }
+
+    /** {@code posts} in the order given, leaving out a post whose photos aren't available. */
+    static Plan plan(List<?> posts) {
+        Plan plan = new Plan();
+        for (Object post : posts) {
+            List<List<String>> photos = OriginalPhotos.sources(post);
+            if (photos.isEmpty()) continue;
+            if (plan.first == null) plan.first = post;
+            plan.photos.addAll(photos);
+            plan.sounds.add(new Sound(soundSources(post), photos.size()));
+        }
+        return plan;
     }
 
     /** Whether a save of this post's video holds it. */
@@ -261,7 +308,7 @@ public final class SlideshowVideo {
      * gallery until the MP4 is finished, so a failure anywhere leaves only temporary files, and
      * those go here.
      */
-    private static MediaFileWriter.Saved make(Context app, List<List<String>> photos, List<String> sound,
+    private static MediaFileWriter.Saved make(Context app, List<List<String>> photos, List<Sound> sounds,
             int seconds, String name, String path, SaveProgress progress, boolean[] silent) throws IOException {
         Maker stand = makerForTests;
         if (stand != null) return stand.make(name, seconds);
@@ -269,14 +316,16 @@ public final class SlideshowVideo {
         try {
             MediaBudget.checkDiskSpace(app.getCacheDir(), -1L);
             File video = temp(app, temporary, ".mp4");
-            drawPhotos(app, photos, seconds, video, progress);
+            Set<Integer> postStarts = new HashSet<>();
+            int at = 0;
+            for (Sound sound : sounds) {
+                postStarts.add(at);
+                at += sound.photos;
+            }
+            drawPhotos(app, photos, seconds, video, progress, postStarts);
             File result = video;
             try {
-                if (sound.isEmpty()) throw new IOException("The post lists no sound");
-                File fetched = temp(app, temporary, ".tmp");
-                RemoteMedia.fetch(sound, fetched, RemoteMedia.Kind.AUDIO);
-                File track = temp(app, temporary, ".m4a");
-                SlideshowEncoder.soundTrack(fetched, track, durationUs(photos.size(), seconds));
+                File track = soundTrack(app, sounds, seconds, temporary);
                 File muxed = temp(app, temporary, ".mp4");
                 TrackMuxer.combine(video, track, muxed);
                 result = muxed;
@@ -294,26 +343,96 @@ public final class SlideshowVideo {
         }
     }
 
+    /**
+     * The sound under the video. One post's runs the whole video, from the top again when it's
+     * shorter. Several posts' (#430) each run under that post's photos, and when they can't share
+     * one track (one doesn't load, or two differ in format) the first post's sound that loads
+     * runs under all of it.
+     */
+    private static File soundTrack(Context app, List<Sound> sounds, int seconds, List<File> temporary)
+            throws IOException {
+        long total = 0;
+        for (Sound sound : sounds) total += durationUs(sound.photos, seconds);
+        if (sounds.size() > 1) {
+            try {
+                return joinedSound(app, sounds, seconds, temporary);
+            } catch (MediaBudget.StopException stop) {
+                throw stop;
+            } catch (IOException | RuntimeException mixed) {
+                Logger.printException(() -> "The joined photo video takes one post's sound for all of it", mixed);
+            }
+        }
+        IOException failure = new IOException("No post lists a sound that loads");
+        for (Sound sound : sounds) {
+            if (sound.sources.isEmpty()) continue;
+            try {
+                return cutSound(app, sound.sources, total, temporary);
+            } catch (MediaBudget.StopException stop) {
+                throw stop;
+            } catch (IOException | RuntimeException skipped) {
+                failure.addSuppressed(skipped);
+            }
+        }
+        throw failure;
+    }
+
+    /** Each post's sound cut to its own photos and the cuts laid end to end in one track. */
+    private static File joinedSound(Context app, List<Sound> sounds, int seconds, List<File> temporary)
+            throws IOException {
+        List<File> parts = new ArrayList<>();
+        long[] starts = new long[sounds.size()];
+        long at = 0;
+        for (int i = 0; i < sounds.size(); i++) {
+            Sound sound = sounds.get(i);
+            if (sound.sources.isEmpty()) throw new IOException("Post " + (i + 1) + " lists no sound");
+            // Each post's sound is its own fetch and encode, so each gets the time one save does.
+            MediaBudget.deadline().allowAtLeast(MediaBudget.JOB_DEADLINE_MS);
+            long length = durationUs(sound.photos, seconds);
+            parts.add(cutSound(app, sound.sources, length, temporary));
+            starts[i] = at;
+            at += length;
+        }
+        File joined = temp(app, temporary, ".m4a");
+        TrackMuxer.joinAudio(parts, starts, joined);
+        return joined;
+    }
+
+    private static File cutSound(Context app, List<String> sources, long lengthUs, List<File> temporary)
+            throws IOException {
+        File fetched = temp(app, temporary, ".tmp");
+        RemoteMedia.fetch(sources, fetched, RemoteMedia.Kind.AUDIO);
+        File track = temp(app, temporary, ".m4a");
+        SlideshowEncoder.soundTrack(fetched, track, lengthUs);
+        return track;
+    }
+
     private static File temp(Context app, List<File> temporary, String suffix) throws IOException {
         File file = MediaCache.createTempFile(app, "photo-video-", suffix);
         temporary.add(file);
         return file;
     }
 
-    /** One photo at a time, each fetched, drawn into the frame and let go before the next. */
+    /**
+     * One photo at a time, each fetched, drawn into the frame and let go before the next.
+     * {@code postStarts} holds where each post's photos begin. With several posts, each one gets
+     * the time a single save gets, and Cancel on the run stops the video under way, since one
+     * video of many posts can take as long as all of their saves would.
+     */
     private static void drawPhotos(Context app, List<List<String>> photos, int seconds, File output,
-            SaveProgress progress) throws IOException {
+            SaveProgress progress, Set<Integer> postStarts) throws IOException {
         int perPhoto = framesPerPhoto(seconds);
         long total = (long) perPhoto * photos.size();
+        boolean joined = postStarts.size() > 1;
         SlideshowEncoder encoder = null;
         Bitmap frame = null;
         try {
             Canvas canvas = null;
             Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
             for (int i = 0; i < photos.size(); i++) {
-                if (progress.isCancelled()) {
+                if (progress.isCancelled() || (joined && MediaBudget.cancelled())) {
                     throw new MediaBudget.StopException("Photo video cancelled", MediaBudget.StopException.Reason.CANCELLED);
                 }
+                if (joined && i > 0 && postStarts.contains(i)) MediaBudget.deadline().allowAtLeast(MediaBudget.JOB_DEADLINE_MS);
                 Bitmap photo = fetchPhoto(app, photos.get(i), encoder == null ? null : new int[]{encoder.width, encoder.height}, i + 1);
                 try {
                     if (encoder == null) {

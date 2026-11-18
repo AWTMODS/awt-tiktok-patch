@@ -194,6 +194,8 @@ public final class LiveRecordChip {
             registerCallbacks(activity);
             // Auto tap (#335) follows the same pages and keeps its own chip and checks.
             LiveAutoTap.roomResumed(activity);
+            // So does listening for your name in the room's sound (#424).
+            LiveListen.roomResumed(activity);
             // A PiP room has no full-size resumed page. Its current fragment is selected by
             // TikTok's player, not by whichever adjacent page last received onResume.
             if (nativePip(activity)) {
@@ -265,6 +267,7 @@ public final class LiveRecordChip {
                     removeChip();
                     clearScreen = false;
                     CLEAR_ROOM_STATES.clear();
+                    LivePipRecord.forget(destroyed);
                     page = new WeakReference<>(null);
                     host = new WeakReference<>(null);
                 }
@@ -302,22 +305,66 @@ public final class LiveRecordChip {
         return Math.round(value * activity.getResources().getDisplayMetrics().density);
     }
 
+    /** The standard size of Hushfeed's LIVE buttons, TikTok's own tap size, in dp. */
+    static final int BUTTON_SIZE_DP = 48;
+    /** The smallest size `Size of the LIVE buttons` offers, in dp (#359). */
+    static final int MIN_BUTTON_SIZE_DP = 32;
+
+    /** The size Hushfeed's LIVE buttons are drawn at (#359), in dp: 48 for anything it doesn't offer. */
+    public static int buttonSizeDp() {
+        try {
+            int size = Integer.parseInt(Settings.LIVE_BUTTON_SIZE.get().trim());
+            if (size >= MIN_BUTTON_SIZE_DP && size <= BUTTON_SIZE_DP) return size;
+        } catch (RuntimeException ignored) {
+            // The standard size below.
+        }
+        return BUTTON_SIZE_DP;
+    }
+
+    /** {@code normalDp}, a measure of a 48 dp LIVE button, at the chosen size (#359). */
+    public static int scaledDp(int normalDp) {
+        return Math.round(normalDp * buttonSizeDp() / (float) BUTTON_SIZE_DP);
+    }
+
+    /** The chips' text size: 13 sp at the standard size, a point less for each 8 dp smaller (#359). */
+    static float chipTextSp() {
+        return 13f - (BUTTON_SIZE_DP - buttonSizeDp()) / 8f;
+    }
+
+    /**
+     * Draws a Record or Auto tap chip at the chosen size (#359): a dark pill with white text,
+     * 48 dp tall at the standard size.
+     */
+    static void styleChip(TextView view) {
+        float density = view.getResources().getDisplayMetrics().density;
+        view.setTextColor(Color.WHITE);
+        view.setTextSize(chipTextSp());
+        view.setGravity(Gravity.CENTER);
+        int least = Math.round(scaledDp(BUTTON_SIZE_DP) * density);
+        view.setMinHeight(least);
+        view.setMinWidth(least);
+        int side = Math.round(scaledDp(14) * density);
+        view.setPadding(side, 0, side, 0);
+        GradientDrawable background = new GradientDrawable();
+        background.setCornerRadius(Math.round(scaledDp(24) * density));
+        background.setColor(0xB3000000);
+        view.setBackground(background);
+    }
+
+    /** True when {@code view}, a chip, was drawn at another size than the one chosen now. */
+    static boolean drawnAtOtherSize(TextView view) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return view.getMinHeight() != Math.round(scaledDp(BUTTON_SIZE_DP) * density);
+    }
+
     private static void showChip(Activity activity) {
-        if (chip != null && chip.getContext() == activity && chip.getParent() != null) return;
+        if (chip != null && chip.getContext() == activity && chip.getParent() != null
+                && !drawnAtOtherSize(chip)) return;
         removeChip();
         ViewGroup content = activity.findViewById(android.R.id.content);
         if (content == null) return;
         TextView view = new TextView(activity);
-        view.setTextColor(Color.WHITE);
-        view.setTextSize(13);
-        view.setGravity(Gravity.CENTER);
-        view.setMinHeight(dp(activity, 48));
-        view.setMinWidth(dp(activity, 48));
-        view.setPadding(dp(activity, 14), 0, dp(activity, 14), 0);
-        GradientDrawable background = new GradientDrawable();
-        background.setCornerRadius(dp(activity, 24));
-        background.setColor(0xB3000000);
-        view.setBackground(background);
+        styleChip(view);
         view.setOnClickListener(clicked -> onChipTap());
         markStacked(view, STACK_RECORD, dp(activity, TOP_DP), dp(activity, GAP_DP));
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
@@ -346,12 +393,13 @@ public final class LiveRecordChip {
     }
 
     /**
-     * Adrmodtt's own buttons over a LIVE room stack top to bottom in this order: the Record chip,
-     * Auto tap, then the block button.
+     * Hushfeed's own buttons over a LIVE room stack top to bottom in this order: the Record chip,
+     * Auto tap, the block button, then Ghost mode's eye.
      */
     public static final int STACK_RECORD = 1;
     public static final int STACK_AUTO_TAP = 2;
     public static final int STACK_BLOCK = 3;
+    public static final int STACK_UNSEEN = 4;
 
     /** A stacked button's place in the stack, the top it asks for and the gap it keeps, in pixels. */
     private static final class StackSlot {
@@ -473,6 +521,7 @@ public final class LiveRecordChip {
     }
 
     private static void refresh() {
+        LivePipRecord.update(host.get());
         TextView view = chip;
         if (view == null) return;
         view.setVisibility(hidesChip(recorder == null ? null : recorder.target(), clearScreen)
@@ -613,6 +662,40 @@ public final class LiveRecordChip {
                 Utils.showToastShort(L10n.t("The recording couldn't be saved. Try again."));
             }
         }
+    }
+
+    /** The LIVE room's activity, the one TikTok's picture-in-picture window belongs to. */
+    static Activity hostActivity() {
+        return host.get();
+    }
+
+    /** Which Record button TikTok's own picture-in-picture window shows (#413). */
+    static int pipButtonState() {
+        return pipButtonState(enabled(), LiveRecordSource.screen(), saving,
+                recorder != null && recorder.recording());
+    }
+
+    static int pipButtonState(boolean enabled, boolean screen, boolean saving, boolean recording) {
+        if (!enabled || screen) return LivePipRecord.HIDDEN;
+        if (saving) return LivePipRecord.SAVING;
+        return recording ? LivePipRecord.STOP : LivePipRecord.RECORD;
+    }
+
+    /**
+     * The window's Record button: it records the LIVE playing in the window, which the
+     * once-a-second check follows too, and its Stop works like the chip's.
+     */
+    static void onPipButton() {
+        try {
+            Activity activity = host.get();
+            if (!saving && (recorder == null || !recorder.recording()) && nativePip(activity)) {
+                Object playing = currentPipPage(activity);
+                if (playing != null) follow(playing);
+            }
+        } catch (Throwable failure) {
+            Logger.printException(() -> "Could not find the LIVE in the window", failure);
+        }
+        onChipTap();
     }
 
     /** Stops a running recording so it's saved; false when none is running. */
@@ -1043,7 +1126,7 @@ public final class LiveRecordChip {
     }
 
     /** Stable room identity across the native controller and the resumed room page. */
-    static String roomKey(Object room) {
+    public static String roomKey(Object room) {
         if (room == null) return null;
         Object text = Reflect.readField(room, "idStr");
         if (text instanceof String && !((String) text).isEmpty()) return (String) text;

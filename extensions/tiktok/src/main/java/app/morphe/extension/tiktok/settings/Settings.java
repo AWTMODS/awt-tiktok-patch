@@ -120,6 +120,9 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting KEEP_CAPTIONS_CLEAR_DISPLAY = new BooleanSetting("keep_captions_clear_display", FALSE);
     public static final IntegerSetting CAPTION_CLEAR_DISPLAY_OFFSET = new IntegerSetting(
             "caption_clear_display_offset", 0, Setting.parent(KEEP_CAPTIONS_CLEAR_DISPLAY)).withRange(0, 300);
+    /** Where the kept caption sits in Clear display: "tiktok" at TikTok's own caption spot, "bottom" lower, where the description was (#428). */
+    public static final StringSetting CAPTION_CLEAR_DISPLAY_SPOT = new StringSetting(
+            "caption_clear_display_spot", "tiktok", false, Setting.parent(KEEP_CAPTIONS_CLEAR_DISPLAY));
     /** The Accessibility page's Captions switch and the caption controls, where TikTok leaves them off (CaptionsAvailable). */
     public static final BooleanSetting KEEP_CAPTIONS_AVAILABLE = new BooleanSetting("keep_captions_available", FALSE, true);
     public static final BooleanSetting ALLOW_SCREEN_CAPTURE = new BooleanSetting("allow_screen_capture", FALSE, true);
@@ -131,6 +134,10 @@ public class Settings extends BaseSettings {
     // On by default: AMOLED dark theme is in a build only when it was picked, so black is the ask.
     // Off puts TikTok's own dark grays back at the next start (#372).
     public static final BooleanSetting AMOLED_DARK_MODE = new BooleanSetting("amoled_dark_mode", TRUE, true);
+    /** Colors of Hushfeed's settings and its own pop-ups: TikTok's mode, or always dark or light (#434). */
+    public static final StringSetting SETTINGS_THEME = new StringSetting("settings_theme", "tiktok");
+    /** The language of Hushfeed's settings and messages: TikTok's, or one picked under Hushfeed language (#431). */
+    public static final StringSetting HUSHFEED_LANGUAGE = new StringSetting(L10n.PICK_KEY, "tiktok");
     // Off by default: both patches are in the default selection, so the switch is the ask.
     public static final BooleanSetting TURN_OFF_HAPTICS = new BooleanSetting("turn_off_haptics", FALSE);
     public static final BooleanSetting TURN_OFF_SCREEN_TRANSITIONS =
@@ -167,9 +174,13 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting DOWNLOAD_COVER = new BooleanSetting("download_cover", FALSE);
     /** A Save cover button beside Download in a video's share sheet; Download then saves only the video (#146). */
     public static final BooleanSetting SAVE_COVER_BUTTON = new BooleanSetting("save_cover_button", FALSE);
+    /** A Save episodes button in a mini drama episode's share sheet, listing the drama's episodes to pick from (#444). */
+    public static final BooleanSetting SAVE_EPISODES_BUTTON = new BooleanSetting("save_episodes_button", FALSE);
     public static final BooleanSetting DOWNLOAD_WITHOUT_SOUND =
             new BooleanSetting("download_without_sound", FALSE);
     public static final BooleanSetting DOWNLOAD_PROGRESS = new BooleanSetting("download_progress", false);
+    /** Android's share sheet on the saved file once a video or story save finishes, in place of the banner (#423). */
+    public static final BooleanSetting SHARE_AFTER_SAVE = new BooleanSetting("share_after_save", FALSE);
     /** The Share to sheet TikTok opens a few seconds after its own downloader saves a video. */
     public static final BooleanSetting SKIP_POST_DOWNLOAD_SHARE_SHEET =
             new BooleanSetting("skip_post_download_share_sheet", FALSE);
@@ -324,9 +335,24 @@ public class Settings extends BaseSettings {
             new StringSetting("swipe_levels_right", "volume", false, Setting.parent(SWIPE_LEVELS));
     public static final BooleanSetting FIT_VIDEO_TO_SCREEN =
             new BooleanSetting("fit_video_to_screen", FALSE);
+    /** With Fit on, a tall window like a folded phone's front screen is filled instead (#345). */
+    public static final BooleanSetting FIT_FILLS_TALL_SCREEN =
+            new BooleanSetting("fit_fills_tall_screen", FALSE, false, Setting.parent(FIT_VIDEO_TO_SCREEN));
     /** The opposite: crop the video until it covers the window (issue #29). Fit wins when both are on. */
     public static final BooleanSetting FILL_VIDEO_TO_SCREEN =
             new BooleanSetting("fill_video_to_screen", FALSE);
+    /** Cover the window with the whole video by stretching it instead of cropping (#406). */
+    public static final BooleanSetting STRETCH_VIDEO_TO_SCREEN =
+            new BooleanSetting("stretch_video_to_screen", FALSE);
+    /** Cover the window with half the crop of fill and half the stretch of stretch (#421). */
+    public static final BooleanSetting BLEND_VIDEO_TO_SCREEN =
+            new BooleanSetting("blend_video_to_screen", FALSE);
+    /**
+     * Cover the window with the middle of the video kept at its own shape (#421). TikTok picks
+     * the view it plays into as the player starts, so it takes a restart.
+     */
+    public static final BooleanSetting KEEP_MIDDLE_VIDEO_TO_SCREEN =
+            new BooleanSetting("keep_middle_video_to_screen", FALSE, true);
     public static final BooleanSetting UNCAP_REFRESH_RATE =
             new BooleanSetting("uncap_refresh_rate", FALSE);
     /**
@@ -378,6 +404,12 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_SETTINGS_ROW =
             new BooleanSetting("hide_settings_row", FALSE);
+    /**
+     * TikTok's own Settings and privacy rows picked to hide, by enum name (#244), and the names
+     * this phone has listed, which the checklist offers. Read each time the page is built.
+     */
+    public static final StringSetting SETTINGS_ROW_PICKS = new StringSetting("settings_row_picks", "");
+    public static final StringSetting SETTINGS_ROW_CATALOG = new StringSetting("settings_row_catalog", "");
     /** A message of the reader's own, shown each time TikTok opens (#347). */
     public static final BooleanSetting STARTUP_MESSAGE = new BooleanSetting("startup_message", FALSE);
     public static final StringSetting STARTUP_MESSAGE_TITLE = new StringSetting(
@@ -622,6 +654,8 @@ public class Settings extends BaseSettings {
      * accounts that press is TikTok's account switcher, which this takes over while it's on.
      */
     public static final BooleanSetting PROFILE_TAB_OPENS_WATCH_HISTORY = new BooleanSetting("profile_tab_opens_watch_history", FALSE);
+    /** A long press on the Profile tab opens TikTok's Activity center (#425), while Watch history's is off. */
+    public static final BooleanSetting PROFILE_TAB_OPENS_ACTIVITY_CENTER = new BooleanSetting("profile_tab_opens_activity_center", FALSE);
     /**
      * Holding the Profile tab opens TikTok's account switcher on accounts where TikTok left that
      * hold off (#388). TikTok's switch_account_gesture experiment answers yes, which is what puts
@@ -755,6 +789,11 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_LIVE_SERVICE_PLUS = new BooleanSetting("hide_live_service_plus", FALSE);
     /**
+     * Hides the AI Summary card on a LIVE preview in the feed; the LIVE controls patch. Read each
+     * time the card would show, so no restart.
+     */
+    public static final BooleanSetting HIDE_LIVE_AI_SUMMARY = new BooleanSetting("hide_live_ai_summary", FALSE);
+    /**
      * Shows a LIVE's exact viewer count in its room instead of TikTok's rounded one; the LIVE
      * controls patch. Read each time the count is drawn, so no restart.
      */
@@ -797,6 +836,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting KEEP_LIVE_CLEAR_SCREEN = new BooleanSetting("keep_live_clear_screen", FALSE);
     /**
+     * Gives every LIVE room TikTok's full screen button, which it attaches only in LIVE Studio
+     * and screen share rooms (#57); the LIVE controls patch. TikTok still shows the button only
+     * while the room's video is wide. Read as each room loads its widgets, so the next room
+     * follows a change.
+     */
+    public static final BooleanSetting OFFER_LIVE_FULL_SCREEN = new BooleanSetting("offer_live_full_screen", FALSE);
+    /**
      * Opens LIVE panels in TikTok's dark LIVE theme while TikTok is in dark mode (#159); the LIVE
      * controls patch. Read as each panel opens, so the next panel follows a change. The provider
      * answer alone only turned the panels' navigation bar dark on the S25, so each themed
@@ -836,11 +882,41 @@ public class Settings extends BaseSettings {
      * than 8 as 8. Read as tapping starts, so no restart.
      */
     public static final StringSetting LIVE_AUTO_TAP_RATE = new StringSetting("live_auto_tap_rate", "4");
+    /** How big Hushfeed's buttons in a LIVE room are, in dp (#359). Read as a room's buttons are drawn. */
+    public static final StringSetting LIVE_BUTTON_SIZE = new StringSetting("live_button_size", "48");
+    /**
+     * Alerts you when your name comes up in a LIVE (#424); the LIVE controls patch. Read on each
+     * message the room gets, so no restart.
+     */
+    public static final BooleanSetting LIVE_NAME_ALERTS = new BooleanSetting("live_name_alerts", FALSE);
+    /**
+     * More names for LIVE name alerts to listen for, separated by commas (#424). The handle and
+     * TikTok name are always on the list. Read within seconds of a change, so no restart.
+     */
+    public static final StringSetting LIVE_NAME_ALERT_NAMES = new StringSetting("live_name_alert_names", "");
+    /**
+     * LIVE name alerts also listen to the room's sound through the phone's speech recognition
+     * (#424). Starts with the next room, so no restart.
+     */
+    public static final BooleanSetting LIVE_NAME_ALERTS_LISTEN =
+            new BooleanSetting("live_name_alerts_listen", FALSE, false, Setting.parent(LIVE_NAME_ALERTS));
+    /**
+     * Set when the phone's speech recognition left the LIVE's sound unread, which means it
+     * listens to the microphone instead (#424). Listening stays off until the switch is turned
+     * off and on again. Not a choice, so a backup leaves it out.
+     */
+    public static final BooleanSetting LIVE_LISTEN_SOUND_IGNORED =
+            new BooleanSetting("live_listen_sound_ignored", FALSE, false, false);
     /**
      * Plays the audio TikTok mutes on a post whose sound was pulled; the Keep pulled sounds
      * patch. Read as each video starts, so no restart.
      */
     public static final BooleanSetting KEEP_PULLED_SOUNDS = new BooleanSetting("keep_pulled_sounds", FALSE);
+    /**
+     * Hides TikTok's AI dub tracks so videos and mini dramas play their original audio; the
+     * Play original audio patch. Read as each video is prepared, so no restart.
+     */
+    public static final BooleanSetting ORIGINAL_AUDIO = new BooleanSetting("original_audio", FALSE);
     /**
      * Keeps the playing video going in a small window when the reader leaves TikTok; the
      * Picture-in-picture patch. Read as the reader leaves, so no restart.
@@ -860,12 +936,19 @@ public class Settings extends BaseSettings {
     /** The language's short date ("10/7/25") before the exact time, in place of its medium one ("Oct 7, 2025"). */
     public static final BooleanSetting PUBLISH_DATE_SHORT_DATE = new BooleanSetting(
             "publish_date_short_date", FALSE, false, Setting.parent(PUBLISH_DATE_EXACT_TIME));
+    /** TikTok's date by the creator's name written day first with dots, 29.09 (#438). */
+    public static final BooleanSetting PUBLISH_DATE_DAY_FIRST = new BooleanSetting("publish_date_day_first", FALSE);
     public static final BooleanSetting PUBLISH_DATE_ON_GRID = new BooleanSetting("publish_date_on_grid", FALSE);
     public static final BooleanSetting VIDEO_LENGTH_ON_GRID = new BooleanSetting("video_length_on_grid", FALSE);
+    public static final BooleanSetting HIDE_GRID_VIEW_COUNT = new BooleanSetting("hide_grid_view_count", FALSE);
     /** How loaded profile and Liked grids are ordered (#180): off, or one of the orders in GridSort. */
     public static final StringSetting PROFILE_GRID_SORT = new StringSetting("profile_grid_sort", "off");
     /** The Liked tab's own order (#180): "profile" follows PROFILE_GRID_SORT, otherwise one of GridSort's orders. */
     public static final StringSetting LIKED_GRID_SORT = new StringSetting("liked_grid_sort", "profile");
+    /** The Favorites tab's own order (#180): "profile" follows PROFILE_GRID_SORT, otherwise one of GridSort's orders. */
+    public static final StringSetting FAVORITES_GRID_SORT = new StringSetting("favorites_grid_sort", "profile");
+    /** A Favorites collection folder's own order (#180): "favorites" follows FAVORITES_GRID_SORT, otherwise one of GridSort's orders. */
+    public static final StringSetting COLLECTION_GRID_SORT = new StringSetting("collection_grid_sort", "favorites");
     /** The order of a sound page's video grid (#180): off, or one of GridSort's orders. */
     public static final StringSetting SOUND_GRID_SORT = new StringSetting("sound_grid_sort", "off");
     /** A chip on Liked grids that starts the list at a chosen year or month (#350). */
@@ -1077,6 +1160,12 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting FEED_MUTE_BUTTON = new BooleanSetting("feed_mute_button", FALSE);
     /** A save button on the video itself, so a save doesn't start with a long press or the share sheet (#299). */
     public static final BooleanSetting DOWNLOAD_BUTTON = new BooleanSetting("download_button", FALSE);
+    /** How big Hushfeed's buttons on videos are, in dp (#433). */
+    public static final StringSetting VIDEO_BUTTON_SIZE = new StringSetting("video_button_size", "48");
+    /** Those buttons stand in a column over TikTok's own on the right, not where they were dragged (#433). */
+    public static final BooleanSetting VIDEO_BUTTONS_OVER_RAIL = new BooleanSetting("video_buttons_over_rail", FALSE);
+    /** Holding TikTok's own save button in the right column downloads the video (#433). */
+    public static final BooleanSetting HOLD_SAVE_TO_DOWNLOAD = new BooleanSetting("hold_save_to_download", FALSE);
     /** TikTok's audio focus waits for a video to play, so opening the app or a chat leaves other apps' music alone (#283). */
     public static final BooleanSetting FOCUS_WAITS_FOR_VIDEO = new BooleanSetting("focus_waits_for_video", FALSE);
     public static final BooleanSetting HIDE_FEED_CAPTION = new BooleanSetting("hide_feed_caption", FALSE);
@@ -1173,12 +1262,12 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting LIQUID_GLASS_BOTTOM_BAR = new BooleanSetting(
             "liquid_glass_bottom_bar", FALSE, false, Setting.parent(FLOATING_BOTTOM_BAR));
     /**
-     * With Liquid glass look, draws a smaller piece of glass behind the selected tab that slides
-     * to the next tab picked (#231). Part of the bar's background, so the tabs and their taps
-     * don't move. Read on each layout.
+     * Draws a smaller piece of glass behind the selected tab that slides to the next tab picked
+     * (#231), over any of the bar's looks: the glass pill, the plain pill, the clear bar or
+     * TikTok's own bar (#416). Part of the bar's background, so the tabs and their taps don't
+     * move. Read on each layout.
      */
-    public static final BooleanSetting GLASS_TAB_LENS = new BooleanSetting(
-            "glass_tab_lens", FALSE, false, Setting.parent(LIQUID_GLASS_BOTTOM_BAR));
+    public static final BooleanSetting GLASS_TAB_LENS = new BooleanSetting("glass_tab_lens", FALSE);
     /**
      * With Liquid glass look on Android 12 and newer, blurs the strip of video behind the glass
      * pill instead of drawing a frost over it (#231). The strip is read back from the player's
@@ -1226,6 +1315,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting GLASS_TAB_SLIDE = new BooleanSetting(
             "glass_tab_slide", FALSE, false, Setting.parent(GLASS_TAB_LENS));
+    /**
+     * With Glass lens on the current tab, a finger held on the pill swells the lens, bends the
+     * blurred video under it harder and splits its light at the rim, and letting go wobbles it
+     * back (#440, GlassTabSlide watches the touch). Read on each touch and draw.
+     */
+    public static final BooleanSetting GLASS_LIQUID_HOLD = new BooleanSetting(
+            "glass_liquid_hold", FALSE, false, Setting.parent(GLASS_TAB_LENS));
     /** With Glass lens on the current tab, a tick each time the lens passes a tab. Read on each draw. */
     public static final BooleanSetting GLASS_HAPTICS = new BooleanSetting(
             "glass_haptics", FALSE, false, Setting.parent(GLASS_TAB_LENS));
@@ -1279,6 +1375,8 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting SHOW_AUTHOR_REGION = new BooleanSetting("show_author_region", FALSE);
     /** The country as its flag in place of its two letters, by the creator's name and a comment's time (#157). */
     public static final BooleanSetting REGION_AS_FLAG = new BooleanSetting("region_as_flag", FALSE);
+    /** The country and the post time on a line of their own under the caption, off the creator's row (#410). */
+    public static final BooleanSetting COUNTRY_DATE_UNDER_CAPTION = new BooleanSetting("country_date_under_caption", FALSE);
     public static final BooleanSetting SHOW_AUTHOR_HANDLE = new BooleanSetting("show_author_handle", FALSE);
     public static final BooleanSetting SHOW_ENGAGEMENT_RATE = new BooleanSetting("show_engagement_rate", FALSE);
     public static final BooleanSetting BLOCK_AUTHOR_BUTTON =
@@ -1303,6 +1401,12 @@ public class Settings extends BaseSettings {
     /** The On this day memory at the front of the Inbox's stories tray (#358). */
     public static final BooleanSetting HIDE_INBOX_ON_THIS_DAY =
             new BooleanSetting("hide_inbox_on_this_day", FALSE);
+    /** LIVEs in the Inbox's stories tray from accounts the viewer doesn't follow (#449). */
+    public static final BooleanSetting HIDE_INBOX_SUGGESTED_LIVES =
+            new BooleanSetting("hide_inbox_suggested_lives", FALSE);
+    /** The Widget circle at the end of the Inbox's stories tray (#449). */
+    public static final BooleanSetting HIDE_INBOX_WIDGET_GUIDE =
+            new BooleanSetting("hide_inbox_widget_guide", FALSE);
     public static final BooleanSetting HIDE_INBOX_NEW_FOLLOWERS = new BooleanSetting("hide_inbox_new_followers", FALSE);
     public static final BooleanSetting HIDE_INBOX_ACTIVITY = new BooleanSetting("hide_inbox_activity", FALSE);
     public static final BooleanSetting HIDE_INBOX_ARCHIVE = new BooleanSetting("hide_inbox_archive", FALSE);
@@ -1339,6 +1443,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting PIN_MORE_CHATS =
             new BooleanSetting("pin_more_chats", FALSE, true);
     public static final BooleanSetting EXPAND_ACTIVITY_LIST = new BooleanSetting("expand_activity_list", FALSE);
+    /** Folds the Likes list's rows into one row per liked comment or video. Read per loaded page. */
+    public static final BooleanSetting BUNDLE_ACTIVITY_LIKES = new BooleanSetting("bundle_activity_likes", FALSE);
+    /** Shows the Activity page as comments on top and likes below. Read when the page opens. */
+    public static final BooleanSetting SPLIT_ACTIVITY_LIST = new BooleanSetting("split_activity_list", FALSE);
+    /** Whether the split page's lower list was closed with its button; kept until it's brought back. */
+    public static final BooleanSetting SPLIT_ACTIVITY_BOTTOM_HIDDEN = new BooleanSetting("split_activity_bottom_hidden", FALSE);
+    /** Whether the split page shows likes above comments; flipped with its swap button. */
+    public static final BooleanSetting SPLIT_ACTIVITY_LIKES_FIRST = new BooleanSetting("split_activity_likes_first", FALSE);
     /** Chat screen clutter. Each is off by default and read live when a chat opens. */
     public static final BooleanSetting HIDE_CHAT_CALL_BUTTONS =
             new BooleanSetting("hide_chat_call_buttons", FALSE);
@@ -1351,6 +1463,9 @@ public class Settings extends BaseSettings {
             new BooleanSetting("turn_off_chat_double_tap", FALSE);
     public static final BooleanSetting TURN_OFF_CHAT_SWIPE_REPLY =
             new BooleanSetting("turn_off_chat_swipe_reply", FALSE);
+    /** The time under each message in a chat, read at each row bind. See MessageTimes. */
+    public static final BooleanSetting SHOW_MESSAGE_TIMES =
+            new BooleanSetting("show_message_times", FALSE);
     public static final StringSetting HIDE_INBOX_CUSTOM_TITLES =
             new StringSetting("hide_inbox_custom_titles", "");
     // Feed filter additions. The list based ones are read live, so a sound blocked from
@@ -1428,6 +1543,10 @@ public class Settings extends BaseSettings {
             new BooleanSetting("ghost_hide_profile_visits", TRUE, false, Setting.parent(GHOST_MODE));
     public static final BooleanSetting GHOST_HIDE_TYPING =
             new BooleanSetting("ghost_hide_typing", TRUE, false, Setting.parent(GHOST_MODE));
+    // Holds back a LIVE room's enter request, which is what puts you on the host's viewer list
+    // (#420). Off by default, like Hide online status, and read at each request, so no restart.
+    public static final BooleanSetting GHOST_HIDE_LIVE_VIEWS =
+            new BooleanSetting("ghost_hide_live_views", FALSE, false, Setting.parent(GHOST_MODE));
     public static final BooleanSetting DISABLE_ANALYTICS = new BooleanSetting("disable_analytics", FALSE);
     // Stop on-device AI profiling, in the default selection with this off. TikTok starts the
     // engine during launch, so a restart applies it.
@@ -1459,6 +1578,9 @@ public class Settings extends BaseSettings {
     // Off by default: TikTok's own hybrid pages, the shop checkout and the CAPTCHA page among
     // them, are built on that bridge and stop working without it.
     public static final BooleanSetting BLOCK_WEBVIEW_JS_INTERFACES = new BooleanSetting("block_webview_js_interfaces", FALSE);
+    // Off by default: with it on, a tap in your own Liked videos, Favorites or Reposts removes
+    // the video instead of opening it (#401). Read at each tap by QuickRemove.
+    public static final BooleanSetting TAP_TO_REMOVE = new BooleanSetting("tap_to_remove", FALSE);
     public static final BooleanSetting CAMERA_MIC_INDICATOR = new BooleanSetting("camera_mic_indicator", FALSE);
     // On once the patch is picked, which is the opt-in. A restart, because TikTok works its
     // signature hash out once and keeps it.
@@ -1583,6 +1705,8 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting BLOCK_FROM_COMMENT = new BooleanSetting("block_from_comment", FALSE);
     /** Adds Block this commenter to the menu a long press on a comment opens (#169). */
     public static final BooleanSetting BLOCK_FROM_COMMENT_MENU = new BooleanSetting("block_from_comment_menu", FALSE);
+    /** Adds Show account country to the same menu, asking TikTok where the commenter is based (#417). */
+    public static final BooleanSetting COUNTRY_FROM_COMMENT_MENU = new BooleanSetting("country_from_comment_menu", FALSE);
     /** Takes the number beside the heart off each comment (#317). A row isn't handed it back until a restart. */
     public static final BooleanSetting HIDE_COMMENT_LIKE_COUNT = new BooleanSetting("hide_comment_like_count", FALSE, true);
     /** Takes the thumbs down off each comment (#314), unless Block from comment has taken it over. */
@@ -1695,6 +1819,8 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting COPY_IDS = new BooleanSetting("copy_ids", TRUE);
     // An Account facts button on a profile's share sheet, from what TikTok already sent about the account.
     public static final BooleanSetting ACCOUNT_FACTS = new BooleanSetting("account_facts", FALSE);
+    // An Account country button on a profile's share sheet that asks TikTok where the account is based (#417).
+    public static final BooleanSetting COUNTRY_ON_PROFILES = new BooleanSetting("country_on_profiles", FALSE);
     // @usernames in a profile's bio open those profiles on a tap (#247).
     public static final BooleanSetting BIO_MENTION_LINKS = new BooleanSetting("bio_mention_links", TRUE);
     // Package names of the apps added to the Share via row, comma separated, in the order picked.
@@ -1765,7 +1891,7 @@ public class Settings extends BaseSettings {
                 LOCAL_HIDE_BUTTON_POSITION, BLOCK_SOUND_BUTTON_POSITION, NOT_INTERESTED_BUTTON_POSITION,
                 FEED_MUTE_BUTTON_POSITION, DOWNLOAD_BUTTON_POSITION, COMMENT_TRANSLATE_BUTTON_TURNED_ON,
                 SHARE_ACTION_CATALOG, PROFILE_SHORTCUT_CATALOG, POPUP_LABEL_CATALOG, SEARCH_TAB_CATALOG,
-                DIAGNOSTIC_REPORT_SALT, AUTO_STREAK_STATE,
+                SETTINGS_ROW_CATALOG, DIAGNOSTIC_REPORT_SALT, AUTO_STREAK_STATE,
                 // The settings screen still searches while paused. Answering the empty default
                 // hid the recent searches, and the next search saved itself over all of them.
                 RECENT_SETTINGS_SEARCHES,

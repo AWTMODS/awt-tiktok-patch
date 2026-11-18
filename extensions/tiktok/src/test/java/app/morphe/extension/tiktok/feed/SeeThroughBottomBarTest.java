@@ -52,10 +52,10 @@ public class SeeThroughBottomBarTest {
         context = RuntimeEnvironment.getApplication();
         Utils.setContext(context);
         VideoOverlayHider.resolveForTests("view_rootview", CELL_ID);
-        VideoOverlayHider.resolveForTests("47.7.3:dve", SPACER_ID);
-        VideoOverlayHider.resolveForTests("47.7.3:opn", BAR_ID);
-        VideoOverlayHider.resolveForTests("47.7.3:bs2", ANCHOR_ID);
-        VideoOverlayHider.resolveForTests("47.7.3:o5n", LIVE_CAPTION_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:dw4", SPACER_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:oql", BAR_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:bsm", ANCHOR_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:o69", LIVE_CAPTION_ID);
         SeeThroughBottomBar.reset();
     }
 
@@ -99,6 +99,7 @@ public class SeeThroughBottomBarTest {
         Settings.LIQUID_GLASS_BOTTOM_BAR.save(false);
         Settings.GLASS_TAB_LENS.save(false);
         Settings.GLASS_TAB_SLIDE.save(false);
+        Settings.GLASS_LIQUID_HOLD.save(false);
         SeeThroughBottomBar.reset();
         VideoOverlayHider.resolveForTests("view_rootview", 0);
     }
@@ -305,11 +306,12 @@ public class SeeThroughBottomBarTest {
     }
 
     /**
-     * Glass lens (#231): with Liquid glass look on, the lens switch swaps the glass for the glass
-     * with a lens in the same place, and every way out still gives TikTok's own background back.
+     * Glass lens (#231) rides any of the bar's looks (#416): TikTok's own bar, the clear bar, the
+     * plain pill and the glass each get it in the same place, a pass keeps the one there, and
+     * every way out still gives TikTok's own background back.
      */
     @Test
-    public void theLensSwitchAddsTheLensToTheGlassAndEveryWayOutGivesTikToksBack() {
+    public void theLensRidesEveryLookOfTheBarAndEveryWayOutGivesTikToksBack() {
         try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
             Activity activity = controller.get();
             Utils.setContext(activity);
@@ -317,13 +319,26 @@ public class SeeThroughBottomBarTest {
             scene.bar.setPadding(5, 6, 7, 8);
             android.graphics.drawable.Drawable original = scene.bar.getBackground();
 
-            Settings.SEE_THROUGH_BOTTOM_BAR.save(true);
-            Settings.FLOATING_BOTTOM_BAR.save(true);
             Settings.GLASS_TAB_LENS.save(true);
             VideoOverlayHider.applyTo(activity);
-            assertFalse("the lens showed without Liquid glass look",
-                    scene.bar.getBackground() instanceof SeeThroughBottomBar.GlassBackground);
-            assertTrue(scene.bar.getBackground() instanceof SeeThroughBottomBar.FloatingBackground);
+            android.graphics.drawable.Drawable over = scene.bar.getBackground();
+            assertTrue("no lens on TikTok's own bar", over instanceof SeeThroughBottomBar.LensCarrier);
+            assertEquals("TikTok's color went", Color.BLACK, ((ColorDrawable) over).getColor());
+            assertEquals("the lens moved the tabs", Arrays.asList(5, 6, 7, 8), padding(scene.bar));
+            VideoOverlayHider.applyTo(activity);
+            assertSame("a pass swapped the lens for a new one", over, scene.bar.getBackground());
+
+            Settings.SEE_THROUGH_BOTTOM_BAR.save(true);
+            VideoOverlayHider.applyTo(activity);
+            android.graphics.drawable.Drawable clear = scene.bar.getBackground();
+            assertTrue("no lens on the clear bar", clear instanceof SeeThroughBottomBar.LensCarrier);
+            assertEquals(Color.TRANSPARENT, ((ColorDrawable) clear).getColor());
+
+            Settings.FLOATING_BOTTOM_BAR.save(true);
+            VideoOverlayHider.applyTo(activity);
+            assertTrue("no lens on the plain pill",
+                    scene.bar.getBackground() instanceof SeeThroughBottomBar.FloatingLensBackground);
+            assertFalse(scene.bar.getBackground() instanceof SeeThroughBottomBar.GlassBackground);
 
             Settings.LIQUID_GLASS_BOTTOM_BAR.save(true);
             VideoOverlayHider.applyTo(activity);
@@ -337,7 +352,7 @@ public class SeeThroughBottomBarTest {
             VideoOverlayHider.applyTo(activity);
             assertTrue(scene.bar.getBackground() instanceof SeeThroughBottomBar.GlassBackground);
             assertFalse("the lens stayed with the switch off",
-                    scene.bar.getBackground() instanceof SeeThroughBottomBar.GlassLensBackground);
+                    scene.bar.getBackground() instanceof SeeThroughBottomBar.LensCarrier);
 
             Settings.GLASS_TAB_LENS.save(true);
             VideoOverlayHider.applyTo(activity);
@@ -351,6 +366,13 @@ public class SeeThroughBottomBarTest {
 
             Settings.SEE_THROUGH_BOTTOM_BAR.save(false);
             VideoOverlayHider.applyTo(activity);
+            over = scene.bar.getBackground();
+            assertTrue("the lens went with the see-through bar", over instanceof SeeThroughBottomBar.LensCarrier);
+            assertEquals(Color.BLACK, ((ColorDrawable) over).getColor());
+            assertEquals(Arrays.asList(5, 6, 7, 8), padding(scene.bar));
+
+            Settings.GLASS_TAB_LENS.save(false);
+            VideoOverlayHider.applyTo(activity);
             assertSame("the bar's own background must be the very drawable TikTok set",
                     original, scene.bar.getBackground());
             assertEquals(Arrays.asList(5, 6, 7, 8), padding(scene.bar));
@@ -359,8 +381,70 @@ public class SeeThroughBottomBarTest {
         }
     }
 
+    /**
+     * TikTok recolors its own bar (white on some tabs) by setting the color on whatever color the
+     * bar wears. With the lens over it the new color still lands, and it's the color TikTok's own
+     * background goes back with.
+     */
+    @Test
+    public void aColorTikTokGivesItsBarUnderTheLensLandsAndGoesBackWithIt() {
+        Settings.GLASS_TAB_LENS.save(true);
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            Activity activity = controller.get();
+            Utils.setContext(activity);
+            Scene scene = new Scene(activity, View.VISIBLE, Color.BLACK);
+            ColorDrawable original = (ColorDrawable) scene.bar.getBackground();
+
+            VideoOverlayHider.applyTo(activity);
+            ColorDrawable over = (ColorDrawable) scene.bar.getBackground();
+            assertNotSame(original, over);
+            scene.bar.setBackgroundColor(Color.WHITE);
+            assertSame("TikTok's color pushed the lens out", over, scene.bar.getBackground());
+            assertEquals(Color.WHITE, over.getColor());
+            VideoOverlayHider.applyTo(activity);
+            assertSame(over, scene.bar.getBackground());
+
+            Settings.GLASS_TAB_LENS.save(false);
+            VideoOverlayHider.applyTo(activity);
+            assertSame(original, scene.bar.getBackground());
+            assertEquals("the bar went back to a color TikTok had moved on from", Color.WHITE, original.getColor());
+        }
+    }
+
+    /**
+     * A bar background that isn't a plain color is wrapped, not replaced: its padding stays the
+     * bar's, its redraws still reach the bar, and the very same drawable comes back.
+     */
+    @Test
+    public void aBarBackgroundThatIsntAColorKeepsItsPaddingAndRedrawsUnderTheLens() {
+        Settings.GLASS_TAB_LENS.save(true);
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            Activity activity = controller.get();
+            Utils.setContext(activity);
+            Scene scene = new Scene(activity, View.VISIBLE, Color.BLACK);
+            android.graphics.drawable.InsetDrawable theirs = new android.graphics.drawable.InsetDrawable(
+                    new ColorDrawable(Color.DKGRAY), 5, 6, 7, 8);
+            scene.bar.setBackground(theirs);
+            assertEquals(Arrays.asList(5, 6, 7, 8), padding(scene.bar));
+
+            VideoOverlayHider.applyTo(activity);
+            android.graphics.drawable.Drawable over = scene.bar.getBackground();
+            assertTrue(over instanceof SeeThroughBottomBar.LensOverBackground);
+            assertSame("TikTok's background was swapped instead of wrapped",
+                    theirs, ((SeeThroughBottomBar.LensOverBackground) over).getDrawable());
+            assertSame("TikTok's redraws no longer reach the bar", over, theirs.getCallback());
+            assertEquals("the lens moved the tabs", Arrays.asList(5, 6, 7, 8), padding(scene.bar));
+
+            Settings.GLASS_TAB_LENS.save(false);
+            VideoOverlayHider.applyTo(activity);
+            assertSame(theirs, scene.bar.getBackground());
+            assertSame(scene.bar, theirs.getCallback());
+            assertEquals(Arrays.asList(5, 6, 7, 8), padding(scene.bar));
+        }
+    }
+
     /** Five 216 px tabs on a 1080 x 150 bar, the second one selected, with the lens as its background. */
-    private static LinearLayout tabBar(Context context, SeeThroughBottomBar.GlassLensBackground lens) {
+    private static LinearLayout tabBar(Context context, android.graphics.drawable.Drawable lens) {
         LinearLayout bar = new LinearLayout(context);
         for (int i = 0; i < 5; i++) bar.addView(new View(context), new LinearLayout.LayoutParams(216, 150));
         bar.measure(View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
@@ -579,6 +663,112 @@ public class SeeThroughBottomBarTest {
     }
 
     /**
+     * Liquid glass when held (#440): a held lens eases out to fully pressed, and let go it springs
+     * back past rest once, about a fifth of the way, before landing on rest. A quick tap's release
+     * starts from where its press got to, and the press swells the bubble past a slide's own swell.
+     */
+    @Test
+    public void aHeldLensSwellsThenWobblesBackToRest() {
+        long in = SeeThroughBottomBar.LIQUID_PRESS_MS, out = SeeThroughBottomBar.LIQUID_RELEASE_MS;
+        assertEquals(0f, SeeThroughBottomBar.liquidPress(0, true, 0f), 0f);
+        assertEquals("it doesn't ease out", 0.75f, SeeThroughBottomBar.liquidPress(in / 2, true, 0f), 0.0001f);
+        assertEquals(1f, SeeThroughBottomBar.liquidPress(in, true, 0f), 0f);
+        assertEquals(1f, SeeThroughBottomBar.liquidPress(0, false, 1f), 0.0001f);
+        float lowest = 1f;
+        for (long ms = 0; ms <= out; ms += 5) {
+            float press = SeeThroughBottomBar.liquidPress(ms, false, 1f);
+            assertTrue("it bounced past where it started at " + ms + " ms", press <= 1f);
+            lowest = Math.min(lowest, press);
+        }
+        assertEquals("the wobble's dip past rest", -0.23f, lowest, 0.01f);
+        assertEquals(0f, SeeThroughBottomBar.liquidPress(out, false, 1f), 0f);
+        assertEquals("it jumps onto rest", 0f, SeeThroughBottomBar.liquidPress(out - 1, false, 1f), 0.005f);
+        assertTrue("a quick tap let go from fully pressed", SeeThroughBottomBar.liquidPress(10, false, 0.4f) <= 0.4f);
+
+        assertEquals(1f + SeeThroughBottomBar.LIQUID_SWELL, SeeThroughBottomBar.heldBubble(1f, 1f), 0.0001f);
+        assertEquals("a slide's bigger swell lost", 1.08f, SeeThroughBottomBar.heldBubble(1.08f, 0.2f), 0.0001f);
+        assertTrue("no dip below its size as it wobbles", SeeThroughBottomBar.heldBubble(1f, -0.2f) < 1f);
+    }
+
+    /**
+     * Liquid glass when held without Slide across the tabs (#440): a finger down on the pill holds
+     * the lens and every touch still goes on to TikTok. Sideways it stays held, since there's no
+     * slide to start, and it lets go as the finger lifts. A swipe up or down lets go at once. With
+     * Slide across the tabs on as well, the slide still starts, and lifting the finger lets go.
+     */
+    @Test
+    public void aFingerOnThePillHoldsTheLensUntilItLifts() {
+        Settings.GLASS_LIQUID_HOLD.save(true);
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            Activity activity = controller.get();
+            Utils.setContext(activity);
+            float density = activity.getResources().getDisplayMetrics().density;
+            SeeThroughBottomBar.GlassLensBackground lens = new SeeThroughBottomBar.GlassLensBackground(density);
+            LinearLayout bar = tabBar(activity, lens);
+            FrameLayout root = new FrameLayout(activity);
+            root.addView(bar, new FrameLayout.LayoutParams(1080, 150));
+            activity.setContentView(root);
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+            lens.setBounds(0, 0, 1080, 150);
+            lens.draw(new android.graphics.Canvas(
+                    android.graphics.Bitmap.createBitmap(1080, 150, android.graphics.Bitmap.Config.ARGB_8888)));
+            GlassTabSlide slide = GlassTabSlide.installedIn(activity.getWindow());
+            assertTrue("nothing watches the window for a hold", slide != null && slide.bar() == bar);
+
+            java.util.List<Integer> passed = new java.util.ArrayList<>();
+            android.view.Window.Callback inner = (android.view.Window.Callback) java.lang.reflect.Proxy.newProxyInstance(
+                    android.view.Window.Callback.class.getClassLoader(), new Class<?>[]{android.view.Window.Callback.class},
+                    (proxy, method, args) -> {
+                        if ("dispatchTouchEvent".equals(method.getName())) {
+                            passed.add(((android.view.MotionEvent) args[0]).getActionMasked());
+                        }
+                        return method.getReturnType() == boolean.class ? Boolean.FALSE : null;
+                    });
+            int[] at = new int[2];
+            bar.getLocationOnScreen(at);
+            float y = at[1] + lens.pillRect.centerY();
+            float from = at[0] + middle(bar.getChildAt(1)), to = at[0] + middle(bar.getChildAt(3));
+            float slop = android.view.ViewConfiguration.get(activity).getScaledTouchSlop();
+            SeeThroughBottomBar.TabLens held = lens.lens();
+
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_DOWN, from, y), inner));
+            assertTrue("the finger didn't hold the lens", held.held);
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(
+                    java.time.Duration.ofMillis(SeeThroughBottomBar.LIQUID_PRESS_MS));
+            assertEquals(1f, held.press(android.os.SystemClock.uptimeMillis()), 0f);
+            assertFalse("a hold kept a sideways move from TikTok",
+                    slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, to, y), inner));
+            assertTrue("moving sideways let go of the lens", held.held);
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, to, y), inner));
+            assertFalse("lifting the finger kept the lens held", held.held);
+            assertTrue("a hold sent TikTok a cancel", passed.isEmpty());
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(
+                    java.time.Duration.ofMillis(SeeThroughBottomBar.LIQUID_RELEASE_MS));
+            assertEquals(0f, held.press(android.os.SystemClock.uptimeMillis()), 0f);
+
+            // Up or down first: a swipe on the bar, so the lens lets go at once.
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_DOWN, from, y), inner));
+            assertTrue(held.held);
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, from, y - slop - 5), inner));
+            assertFalse("a swipe up kept the lens held", held.held);
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, from, y - slop - 5), inner));
+
+            // Both switches: the slide still starts, and lifting the finger lets go.
+            Settings.GLASS_TAB_SLIDE.save(true);
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_DOWN, from, y), inner));
+            assertTrue(held.held);
+            assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, from + slop + 5, y), inner));
+            assertEquals(GlassTabSlide.SLIDING, slide.state());
+            assertTrue("starting the slide let go of the lens", held.held);
+            assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, to, y), inner));
+            assertFalse("the slide's end kept the lens held", held.held);
+        } finally {
+            Settings.GLASS_LIQUID_HOLD.save(false);
+            Settings.GLASS_TAB_SLIDE.save(false);
+        }
+    }
+
+    /**
      * Slide across the tabs: a finger down on the pill goes on to TikTok; once it moves sideways
      * past the slop TikTok gets a cancel, the lens follows the finger, and lifting it opens the tab
      * under it. A finger that goes up or down first is never a slide.
@@ -629,11 +819,11 @@ public class SeeThroughBottomBarTest {
             assertEquals("TikTok never had its cancel",
                     Arrays.asList(android.view.MotionEvent.ACTION_CANCEL), passed);
             assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, to, y), inner));
-            assertEquals(to - at[0], lens.dragX, 0.5f);
+            assertEquals(to - at[0], lens.lens().dragX, 0.5f);
             assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, to, y), inner));
             assertTrue("the tab the finger ended on didn't open", clicked[3]);
             assertFalse(clicked[1]);
-            assertTrue("the lens stayed on the finger", Float.isNaN(lens.dragX));
+            assertTrue("the lens stayed on the finger", Float.isNaN(lens.lens().dragX));
             assertEquals(GlassTabSlide.IDLE, slide.state());
 
             // Up or down first: TikTok's.
@@ -644,6 +834,87 @@ public class SeeThroughBottomBarTest {
             assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, to, y), inner));
         } finally {
             Settings.GLASS_TAB_SLIDE.save(false);
+        }
+    }
+
+    /**
+     * Slide across the tabs on TikTok's own bar, no glass anywhere (#416): the lens follows the
+     * finger over the bar's whole width and lifting it opens the tab under it.
+     */
+    @Test
+    public void slideAcrossTheTabsWorksOnABarWithoutGlass() {
+        Settings.GLASS_TAB_SLIDE.save(true);
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            Activity activity = controller.get();
+            Utils.setContext(activity);
+            float density = activity.getResources().getDisplayMetrics().density;
+            SeeThroughBottomBar.ColorLensBackground lens =
+                    new SeeThroughBottomBar.ColorLensBackground(Color.BLACK, false, density);
+            LinearLayout bar = tabBar(activity, lens);
+            boolean[] clicked = new boolean[5];
+            for (int i = 0; i < 5; i++) {
+                int tab = i;
+                bar.getChildAt(i).setOnClickListener(view -> clicked[tab] = true);
+            }
+            FrameLayout root = new FrameLayout(activity);
+            root.addView(bar, new FrameLayout.LayoutParams(1080, 150));
+            activity.setContentView(root);
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+            lens.setBounds(0, 0, 1080, 150);
+            lens.draw(new android.graphics.Canvas(
+                    android.graphics.Bitmap.createBitmap(1080, 150, android.graphics.Bitmap.Config.ARGB_8888)));
+            GlassTabSlide slide = GlassTabSlide.installedIn(activity.getWindow());
+            assertTrue("no slide watches the window", slide != null && slide.bar() == bar);
+
+            android.view.Window.Callback inner = (android.view.Window.Callback) java.lang.reflect.Proxy.newProxyInstance(
+                    android.view.Window.Callback.class.getClassLoader(), new Class<?>[]{android.view.Window.Callback.class},
+                    (proxy, method, args) -> method.getReturnType() == boolean.class ? Boolean.FALSE : null);
+            int[] at = new int[2];
+            bar.getLocationOnScreen(at);
+            float y = at[1] + 75;
+            float from = at[0] + middle(bar.getChildAt(1)), to = at[0] + middle(bar.getChildAt(3));
+            float slop = android.view.ViewConfiguration.get(activity).getScaledTouchSlop();
+
+            assertFalse(slide.onTouch(touch(android.view.MotionEvent.ACTION_DOWN, from, y), inner));
+            assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, from + slop + 5, y), inner));
+            assertEquals(GlassTabSlide.SLIDING, slide.state());
+            assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_MOVE, to, y), inner));
+            assertEquals("the lens isn't on the finger", to - at[0], lens.lens().dragX, 0.5f);
+            assertTrue(slide.onTouch(touch(android.view.MotionEvent.ACTION_UP, to, y), inner));
+            assertTrue("the tab the finger ended on didn't open", clicked[3]);
+            assertFalse(clicked[1]);
+        } finally {
+            Settings.GLASS_TAB_SLIDE.save(false);
+        }
+    }
+
+    /**
+     * Slide across the tabs turned on while the bar stands still (#416): nothing redraws a plain
+     * pill over a playing video, so the window's next frame hooks the slide in.
+     */
+    @Test
+    public void slideAcrossTheTabsTurnedOnLaterNeedsNoRedrawOfTheBar() {
+        try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
+            Activity activity = controller.get();
+            Utils.setContext(activity);
+            float density = activity.getResources().getDisplayMetrics().density;
+            SeeThroughBottomBar.ColorLensBackground lens =
+                    new SeeThroughBottomBar.ColorLensBackground(Color.BLACK, false, density);
+            LinearLayout bar = tabBar(activity, lens);
+            FrameLayout root = new FrameLayout(activity);
+            root.addView(bar, new FrameLayout.LayoutParams(1080, 150));
+            activity.setContentView(root);
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+            lens.setBounds(0, 0, 1080, 150);
+            lens.draw(new android.graphics.Canvas(
+                    android.graphics.Bitmap.createBitmap(1080, 150, android.graphics.Bitmap.Config.ARGB_8888)));
+            assertTrue("a slide watched the window with the switch off",
+                    GlassTabSlide.installedIn(activity.getWindow()) == null);
+
+            Settings.GLASS_TAB_SLIDE.save(true);
+            bar.getViewTreeObserver().dispatchOnPreDraw();
+            GlassTabSlide slide = GlassTabSlide.installedIn(activity.getWindow());
+            assertTrue("the slide waited for the bar to redraw", slide != null && slide.bar() == bar);
         }
     }
 
@@ -920,7 +1191,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void theFollowingFeedsBandUnderTheBarGoesAndComesBack() {
-        VideoOverlayHider.resolveForTests("47.7.3:wwo", BAND_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:wxz", BAND_ID);
         Settings.SEE_THROUGH_BOTTOM_BAR.save(true);
         try (var controller = Robolectric.buildActivity(Activity.class).setup().visible()) {
             Activity activity = controller.get();
@@ -952,9 +1223,9 @@ public class SeeThroughBottomBarTest {
             VideoOverlayHider.applyTo(activity);
             assertTrue("a page without the band called the overlay hooks broken: "
                             + HookStatus.missing("overlay"),
-                    HookStatus.missing("overlay").stream().noneMatch(line -> line.contains("47.7.3:wwo")));
+                    HookStatus.missing("overlay").stream().noneMatch(line -> line.contains("47.8.3:wxz")));
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:wwo", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:wxz", 0);
             HookStatus.clear();
         }
     }
@@ -1024,7 +1295,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void theMainFeedStripGoesAndTheCaptionStaysAboveTheBar() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         VideoOverlayHider.resolveForTests("video_seek_bar", SEEK_BAR_ID);
@@ -1106,7 +1377,7 @@ public class SeeThroughBottomBarTest {
         } finally {
             Settings.FLOATING_BOTTOM_BAR.save(false);
             VideoOverlayHider.resolveForTests("video_seek_bar", 0);
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
         }
@@ -1122,7 +1393,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void aLivePreviewsCardStaysAboveTheBar() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         VideoOverlayHider.resolveForTests("tv_live_nickname", LIVE_NAME_ID);
@@ -1176,7 +1447,7 @@ public class SeeThroughBottomBarTest {
             assertEquals(View.VISIBLE, strip.getVisibility());
             assertEquals(0f, info.getTranslationY(), 0f);
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
             VideoOverlayHider.resolveForTests("tv_live_nickname", 0);
@@ -1192,7 +1463,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void aDramasInfoBesideTheWidgetLayerGoesUpWithIt() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         VideoOverlayHider.resolveForTests("tv_drama_tips", DRAMA_TIPS_ID);
@@ -1248,7 +1519,7 @@ public class SeeThroughBottomBarTest {
             assertEquals(0f, infos[0].getTranslationY(), 0f);
             assertEquals(0f, layers[0].getTranslationY(), 0f);
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
             VideoOverlayHider.resolveForTests("tv_drama_tips", 0);
@@ -1264,7 +1535,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void aCardsSwipeHintGoesUpWithTheRoom() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         VideoOverlayHider.resolveForTests("tv_swipe_up", SWIPE_HINT_ID);
@@ -1332,7 +1603,7 @@ public class SeeThroughBottomBarTest {
             assertEquals(0f, cards[0].getTranslationY(), 0f);
             assertEquals(0f, layer.getTranslationY(), 0f);
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
             VideoOverlayHider.resolveForTests("tv_swipe_up", 0);
@@ -1348,7 +1619,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void aStripTikTokShowsAgainDoesNotEndTheCollapse() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         Settings.SEE_THROUGH_BOTTOM_BAR.save(true);
@@ -1397,7 +1668,7 @@ public class SeeThroughBottomBarTest {
             assertEquals(-138f, layer.getTranslationY(), 0f);
             assertTrue(SeeThroughBottomBar.collapseAllowed());
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
         }
@@ -1431,7 +1702,7 @@ public class SeeThroughBottomBarTest {
      */
     @Test
     public void aCellHalfwayThroughASwipeDoesNotEndTheCollapse() {
-        VideoOverlayHider.resolveForTests("47.7.3:col", STRIP_ID);
+        VideoOverlayHider.resolveForTests("47.8.3:cpb", STRIP_ID);
         VideoOverlayHider.resolveForTests("viewpager_container", COLUMN_ID);
         VideoOverlayHider.resolveForTests("widget_container", LAYER_ID);
         Settings.SEE_THROUGH_BOTTOM_BAR.save(true);
@@ -1491,7 +1762,7 @@ public class SeeThroughBottomBarTest {
                     ((View) anchors[1].getParent().getParent()).getTop() - pager.getScrollY()
                             + anchors[1].getBottom() + layers[1].getTranslationY(), 0f);
         } finally {
-            VideoOverlayHider.resolveForTests("47.7.3:col", 0);
+            VideoOverlayHider.resolveForTests("47.8.3:cpb", 0);
             VideoOverlayHider.resolveForTests("viewpager_container", 0);
             VideoOverlayHider.resolveForTests("widget_container", 0);
         }
